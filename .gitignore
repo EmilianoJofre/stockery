@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.env.*
+node_modules
+dist
+coverage
+tmp
+log
+storage
+vendor/bundle
+stockify-api/tmp/*
+stockify-api/log/*
+stockify-web/node_modules
+stockify-web/dist

@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: stockify_api_development
+      POSTGRES_USER: stockify
+      POSTGRES_PASSWORD: stockify
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stockify -d stockify_api_development"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ../stockify-api
+      dockerfile: Dockerfile.dev
+    command: ["/bin/sh", "/usr/local/bin/api-start.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: development
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: stockify
+      POSTGRES_PASSWORD: stockify
+      POSTGRES_DB: stockify_api_development
+      FRONTEND_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174
+      JWT_SECRET: stockify-local-secret
+    ports:
+      - "3001:3000"
+    volumes:
+      - ../stockify-api:/app
+      - bundle-cache:/usr/local/bundle
+      - ./api-start.sh:/usr/local/bin/api-start.sh
+
+  web:
+    build:
+      context: ../stockify-web
+      dockerfile: Dockerfile
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5174"]
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: ""
+      VITE_PROXY_TARGET: http://api:3000
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "5174:5174"
+    volumes:
+      - ../stockify-web:/app
+      - web-node-modules:/app/node_modules
+
+volumes:
+  postgres-data:
+  bundle-cache:
+  web-node-modules:

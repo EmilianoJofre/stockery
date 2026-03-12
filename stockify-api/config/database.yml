@@ -1,0 +1,34 @@
+# PostgreSQL. Versions 9.3 and up are supported.
+#
+# Install the pg driver:
+#   gem install pg
+# On macOS with Homebrew:
+#   gem install pg -- --with-pg-config=/usr/local/bin/pg_config
+# On Windows:
+#   gem install pg
+#       Choose the win32 build.
+#       Install PostgreSQL and put its /bin directory on your path.
+#
+# Configure Using Gemfile
+# gem "pg"
+#
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV["POSTGRES_HOST"] if ENV["POSTGRES_HOST"].present? %>
+  port: <%= ENV["POSTGRES_PORT"] if ENV["POSTGRES_PORT"].present? %>
+  username: <%= ENV["POSTGRES_USER"] if ENV["POSTGRES_USER"].present? %>
+  password: <%= ENV["POSTGRES_PASSWORD"] if ENV["POSTGRES_PASSWORD"].present? %>
+
+development:
+  <<: *default
+  database: <%= ENV.fetch("POSTGRES_DB", "stockify_api_development") %>
+
+test:
+  <<: *default
+  database: <%= ENV.fetch("POSTGRES_TEST_DB", "stockify_api_test") %>
+
+production:
+  <<: *default
+  url: <%= ENV["DATABASE_URL"] %>
