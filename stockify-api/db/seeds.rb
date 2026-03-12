@@ -1,4 +1,4 @@
-puts "Seeding Stockify demo workspace..."
+puts "Cargando workspace demo de Stockify..."
 
 [SaleItem, Sale, PurchaseItem, Purchase, InventoryAdjustment, InventoryLevel, Product, Supplier, Store, User].each(&:delete_all)
 
@@ -27,26 +27,26 @@ clerk = User.create!(
 )
 
 stores = [
-  { name: "Santiago Flagship", code: "STG", address: "Providencia 2401" },
+  { name: "Santiago Principal", code: "STG", address: "Providencia 2401" },
   { name: "Las Condes", code: "LCD", address: "Apoquindo 3200" },
-  { name: "Warehouse North", code: "WHN", address: "Ruta 5 Norte KM 18" }
+  { name: "Bodega Norte", code: "WHN", address: "Ruta 5 Norte KM 18" }
 ].map { |attrs| Store.create!(attrs) }
 
 suppliers = [
-  { name: "Nimbus Devices", contact_name: "Camila Reyes", email: "sales@nimbus.dev", phone: "+56 9 5555 1001", notes: "Primary electronics supplier" },
-  { name: "Metro Goods", contact_name: "Jordan Price", email: "ops@metrogoods.io", phone: "+56 9 5555 1002", notes: "Fast replenishment window" },
-  { name: "Atlas Office", contact_name: "Rafa Silva", email: "hello@atlasoffice.co", phone: "+56 9 5555 1003", notes: "Packaging and accessories" }
+  { name: "Nimbus Devices", contact_name: "Camila Reyes", email: "sales@nimbus.dev", phone: "+56 9 5555 1001", notes: "Proveedor principal de electronica" },
+  { name: "Metro Goods", contact_name: "Jordan Price", email: "ops@metrogoods.io", phone: "+56 9 5555 1002", notes: "Reposicion rapida" },
+  { name: "Atlas Office", contact_name: "Rafa Silva", email: "hello@atlasoffice.co", phone: "+56 9 5555 1003", notes: "Embalaje y accesorios" }
 ].map { |attrs| Supplier.create!(attrs) }
 
 products = [
-  { name: "Pulse POS Terminal", sku: "POS-1001", description: "Compact retail POS device with NFC payments.", price: 499.0, low_stock_threshold: 8 },
-  { name: "Halo Barcode Scanner", sku: "SCN-2100", description: "Wireless scanner for high-volume counters.", price: 129.0, low_stock_threshold: 12 },
-  { name: "Atlas Receipt Printer", sku: "PRN-3300", description: "Thermal receipt printer for checkout lanes.", price: 189.0, low_stock_threshold: 6 },
-  { name: "Retail Dock", sku: "DOC-4100", description: "Charging dock for shared handheld devices.", price: 89.0, low_stock_threshold: 10 },
-  { name: "Swift Cash Drawer", sku: "CSD-5200", description: "Heavy-duty drawer with electronic trigger.", price: 149.0, low_stock_threshold: 5 },
-  { name: "Shelf Sensor Pack", sku: "SNS-6200", description: "IoT shelf sensor kit for smart stock reads.", price: 79.0, low_stock_threshold: 15 },
-  { name: "Stockify Labels", sku: "LBL-7100", description: "Premium adhesive labels for warehouse marking.", price: 19.0, low_stock_threshold: 40 },
-  { name: "Counter Tablet", sku: "TAB-8100", description: "11-inch kiosk-ready tablet for assisted sales.", price: 359.0, low_stock_threshold: 7 }
+  { name: "Terminal POS Pulse", sku: "POS-1001", description: "Terminal POS compacto con pagos NFC.", price: 499.0, low_stock_threshold: 8 },
+  { name: "Scanner Halo", sku: "SCN-2100", description: "Scanner inalambrico para mostradores de alto flujo.", price: 129.0, low_stock_threshold: 12 },
+  { name: "Impresora Atlas", sku: "PRN-3300", description: "Impresora termica para lineas de caja.", price: 189.0, low_stock_threshold: 6 },
+  { name: "Dock Retail", sku: "DOC-4100", description: "Base de carga para dispositivos compartidos.", price: 89.0, low_stock_threshold: 10 },
+  { name: "Cajon Swift", sku: "CSD-5200", description: "Cajon reforzado con gatillo electronico.", price: 149.0, low_stock_threshold: 5 },
+  { name: "Pack Sensor Shelf", sku: "SNS-6200", description: "Kit IoT para lectura inteligente de stock en gondola.", price: 79.0, low_stock_threshold: 15 },
+  { name: "Etiquetas Stockify", sku: "LBL-7100", description: "Etiquetas premium para marcaje de bodega.", price: 19.0, low_stock_threshold: 40 },
+  { name: "Tablet Mostrador", sku: "TAB-8100", description: "Tablet de 11 pulgadas lista para kiosko y venta asistida.", price: 359.0, low_stock_threshold: 7 }
 ].map { |attrs| Product.create!(attrs) }
 
 stores.each do |store|
@@ -102,7 +102,7 @@ Sales::Creator.new(
   params: {
     store_id: stores[0].id,
     sold_on: 2.days.ago.to_date,
-    customer_name: "Aurora Retail Group",
+    customer_name: "Grupo Retail Aurora",
     items: [
       { product_id: products[0].id, quantity: 3, unit_price: 499.0 },
       { product_id: products[1].id, quantity: 9, unit_price: 129.0 }
@@ -115,7 +115,7 @@ Sales::Creator.new(
   params: {
     store_id: stores[1].id,
     sold_on: 1.day.ago.to_date,
-    customer_name: "North Lane Stores",
+    customer_name: "Tiendas North Lane",
     items: [
       { product_id: products[3].id, quantity: 6, unit_price: 89.0 },
       { product_id: products[5].id, quantity: 18, unit_price: 79.0 },
@@ -129,7 +129,7 @@ Sales::Creator.new(
   params: {
     store_id: stores[2].id,
     sold_on: Date.current,
-    customer_name: "Summit Supply Co.",
+    customer_name: "Summit Supply",
     items: [
       { product_id: products[4].id, quantity: 10, unit_price: 149.0 },
       { product_id: products[7].id, quantity: 4, unit_price: 359.0 }
@@ -143,7 +143,7 @@ InventoryManager.adjust!(
   user: manager,
   quantity_change: -3,
   reason: "audit",
-  note: "Damaged units identified during cycle count"
+  note: "Unidades danadas detectadas durante el conteo ciclico"
 )
 
 InventoryManager.adjust!(
@@ -152,13 +152,13 @@ InventoryManager.adjust!(
   user: admin,
   quantity_change: -2,
   reason: "display",
-  note: "Showroom allocation"
+  note: "Asignacion para sala de exhibicion"
 )
 
-puts "Seed complete:"
-puts "  Users: #{User.count}"
-puts "  Stores: #{Store.count}"
-puts "  Products: #{Product.count}"
-puts "  Purchases: #{Purchase.count}"
-puts "  Sales: #{Sale.count}"
+puts "Carga demo completada:"
+puts "  Usuarios: #{User.count}"
+puts "  Tiendas: #{Store.count}"
+puts "  Productos: #{Product.count}"
+puts "  Compras: #{Purchase.count}"
+puts "  Ventas: #{Sale.count}"
 #   end

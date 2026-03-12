@@ -4,6 +4,7 @@ import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../lib/api";
 import { formatDate } from "../lib/format";
+import { translateAdjustmentReason } from "../lib/translations";
 
 const EMPTY_ADJUSTMENT = {
   product_id: "",
@@ -115,11 +116,11 @@ export default function InventoryPage() {
             <input
               className="input-field w-[220px]"
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search inventory"
+              placeholder="Buscar inventario"
               value={search}
             />
             <select className="input-field w-[180px]" onChange={(event) => setStoreId(event.target.value)} value={storeId}>
-              <option value="">All stores</option>
+              <option value="">Todas las tiendas</option>
               {stores.map((store) => (
                 <option key={store.id} value={store.id}>
                   {store.name}
@@ -131,26 +132,26 @@ export default function InventoryPage() {
               onClick={() => setLowStockOnly((current) => !current)}
               type="button"
             >
-              {lowStockOnly ? "Low stock mode" : "Filter low stock"}
+              {lowStockOnly ? "Modo stock bajo" : "Filtrar stock bajo"}
             </button>
           </div>
         }
-        description="Track quantity by location and monitor threshold risk."
-        title="Inventory Levels"
+        description="Sigue cantidades por ubicacion y monitorea el riesgo frente a los umbrales."
+        title="Niveles de inventario"
       >
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
         {loading ? (
-          <p className="text-sm text-muted">Loading inventory...</p>
+          <p className="text-sm text-muted">Cargando inventario...</p>
         ) : inventory.length ? (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="text-xs uppercase tracking-[0.22em] text-muted">
                 <tr>
-                  <th className="pb-4">Product</th>
-                  <th className="pb-4">Store</th>
-                  <th className="pb-4">Quantity</th>
-                  <th className="pb-4">Threshold</th>
+                  <th className="pb-4">Producto</th>
+                  <th className="pb-4">Tienda</th>
+                  <th className="pb-4">Cantidad</th>
+                  <th className="pb-4">Umbral</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -164,7 +165,7 @@ export default function InventoryPage() {
                     <td className="py-4">
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold text-ink">{item.quantity}</span>
-                        {item.low_stock ? <span className="chip chip-alert">Alert</span> : null}
+                        {item.low_stock ? <span className="chip chip-alert">Alerta</span> : null}
                       </div>
                     </td>
                     <td className="py-4 text-muted">{item.threshold}</td>
@@ -174,7 +175,7 @@ export default function InventoryPage() {
             </table>
           </div>
         ) : (
-          <EmptyState description="Inventory rows will appear as products are stocked by store." title="No inventory rows" />
+          <EmptyState description="Las filas apareceran a medida que el inventario se distribuya por tienda." title="Sin filas de inventario" />
         )}
       </SectionCard>
 
@@ -182,21 +183,21 @@ export default function InventoryPage() {
         <SectionCard
           description={
             canManage
-              ? "Increase or decrease stock and leave a reason trail."
-              : "Your role can review inventory but cannot post adjustments."
+              ? "Aumenta o disminuye stock y deja una trazabilidad del motivo."
+              : "Tu rol puede revisar inventario, pero no publicar ajustes."
           }
-          title="Stock Adjustment"
+          title="Ajuste de stock"
         >
           {canManage ? (
             <form className="space-y-4" onSubmit={handleAdjust}>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Product</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Producto</label>
                 <select
                   className="input-field"
                   onChange={(event) => setForm((current) => ({ ...current, product_id: event.target.value }))}
                   value={form.product_id}
                 >
-                  <option value="">Select product</option>
+                  <option value="">Selecciona un producto</option>
                   {inventoryProductOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -205,13 +206,13 @@ export default function InventoryPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Store</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
                 <select
                   className="input-field"
                   onChange={(event) => setForm((current) => ({ ...current, store_id: event.target.value }))}
                   value={form.store_id}
                 >
-                  <option value="">Select store</option>
+                  <option value="">Selecciona una tienda</option>
                   {stores.map((store) => (
                     <option key={store.id} value={store.id}>
                       {store.name}
@@ -220,31 +221,31 @@ export default function InventoryPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Quantity change</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Cambio de cantidad</label>
                 <input
                   className="input-field"
                   onChange={(event) => setForm((current) => ({ ...current, quantity_change: event.target.value }))}
-                  placeholder="Use negative numbers for decreases"
+                  placeholder="Usa numeros negativos para descontar"
                   type="number"
                   value={form.quantity_change}
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Reason</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Motivo</label>
                 <select
                   className="input-field"
                   onChange={(event) => setForm((current) => ({ ...current, reason: event.target.value }))}
                   value={form.reason}
                 >
-                  <option value="audit">Audit</option>
-                  <option value="purchase">Purchase</option>
-                  <option value="sale">Sale</option>
-                  <option value="display">Display</option>
-                  <option value="damage">Damage</option>
+                  <option value="audit">Auditoria</option>
+                  <option value="purchase">Compra</option>
+                  <option value="sale">Venta</option>
+                  <option value="display">Exhibicion</option>
+                  <option value="damage">Merma</option>
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Note</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Nota</label>
                 <textarea
                   className="text-area-field"
                   onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
@@ -252,18 +253,18 @@ export default function InventoryPage() {
                 />
               </div>
               <button className="btn-secondary w-full" disabled={saving} type="submit">
-                {saving ? "Posting..." : "Post adjustment"}
+                {saving ? "Publicando..." : "Publicar ajuste"}
               </button>
             </form>
           ) : (
             <EmptyState
-              description="Admin and Manager roles can publish stock adjustments."
-              title="View-only access"
+              description="Los roles Administrador y Gerente pueden publicar ajustes de stock."
+              title="Acceso solo de visualizacion"
             />
           )}
         </SectionCard>
 
-        <SectionCard description="Latest stock movements with operator context." title="Recent Adjustments">
+        <SectionCard description="Ultimos movimientos de stock con contexto del operador." title="Ajustes recientes">
           {adjustments.length ? (
             <div className="space-y-3">
               {adjustments.map((adjustment) => (
@@ -272,7 +273,7 @@ export default function InventoryPage() {
                     <div>
                       <p className="text-sm font-semibold text-ink">{adjustment.product_name}</p>
                       <p className="text-sm text-muted">
-                        {adjustment.store_name} · {adjustment.reason}
+                        {adjustment.store_name} · {translateAdjustmentReason(adjustment.reason)}
                       </p>
                     </div>
                     <span className={`chip ${adjustment.quantity_change < 0 ? "chip-alert" : ""}`}>
@@ -280,7 +281,7 @@ export default function InventoryPage() {
                       {adjustment.quantity_change}
                     </span>
                   </div>
-                  <p className="mt-3 text-sm text-muted">{adjustment.note || "No note provided."}</p>
+                  <p className="mt-3 text-sm text-muted">{adjustment.note || "Sin nota registrada."}</p>
                   <p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted">
                     {adjustment.actor_name} · {formatDate(adjustment.created_at)}
                   </p>
@@ -288,7 +289,7 @@ export default function InventoryPage() {
               ))}
             </div>
           ) : (
-            <EmptyState description="No adjustments have been recorded yet." title="No adjustment history" />
+            <EmptyState description="Aun no se han registrado ajustes." title="Sin historial de ajustes" />
           )}
         </SectionCard>
       </div>

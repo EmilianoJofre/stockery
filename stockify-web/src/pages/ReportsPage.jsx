@@ -4,28 +4,25 @@ import EmptyState from "../components/EmptyState";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest, buildApiUrl } from "../lib/api";
+import { translateReportHeading } from "../lib/translations";
 
 const REPORTS = [
   {
     key: "stock_levels",
-    title: "Stock Levels",
-    description: "Inventory status by store, product, threshold, and low-stock flag.",
+    title: "Niveles de stock",
+    description: "Estado del inventario por tienda, producto, umbral y bandera de stock bajo.",
   },
   {
     key: "top_selling_products",
-    title: "Top Selling Products",
-    description: "Revenue and quantity sold across completed orders.",
+    title: "Productos mas vendidos",
+    description: "Ingresos y cantidad vendida en ordenes completadas.",
   },
   {
     key: "low_stock",
-    title: "Low Stock",
-    description: "Products currently at or below their configured threshold.",
+    title: "Stock bajo",
+    description: "Productos actualmente en o bajo el umbral configurado.",
   },
 ];
-
-function prettifyHeading(value) {
-  return value.replaceAll("_", " ");
-}
 
 export default function ReportsPage() {
   const { user } = useAuth();
@@ -62,7 +59,7 @@ export default function ReportsPage() {
 
   if (!canView) {
     return (
-      <AccessNotice description="Reports are available to Admin and Manager roles. Clerk accounts can continue working in sales and inventory modules." />
+      <AccessNotice description="Los reportes estan disponibles para Administrador y Gerente. Operador puede seguir trabajando en ventas e inventario." />
     );
   }
 
@@ -88,16 +85,16 @@ export default function ReportsPage() {
       <SectionCard
         action={
           <a className="btn-secondary" href={buildApiUrl(`/api/v1/reports/${activeKey}.csv`)}>
-            Export CSV
+            Exportar CSV
           </a>
         }
         description={activeReport.description}
-        title={`${activeReport.title} Preview`}
+        title={`Vista previa: ${activeReport.title}`}
       >
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
         {loading ? (
-          <p className="text-sm text-muted">Loading report preview...</p>
+          <p className="text-sm text-muted">Cargando vista previa del reporte...</p>
         ) : rows.length ? (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
@@ -105,7 +102,7 @@ export default function ReportsPage() {
                 <tr>
                   {Object.keys(rows[0]).map((key) => (
                     <th key={key} className="pb-4 capitalize">
-                      {prettifyHeading(key)}
+                      {translateReportHeading(key)}
                     </th>
                   ))}
                 </tr>
@@ -124,7 +121,7 @@ export default function ReportsPage() {
             </table>
           </div>
         ) : (
-          <EmptyState description="This report has no rows for the current dataset." title="No report rows" />
+          <EmptyState description="Este reporte no tiene filas para el dataset actual." title="Sin filas en el reporte" />
         )}
       </SectionCard>
     </div>

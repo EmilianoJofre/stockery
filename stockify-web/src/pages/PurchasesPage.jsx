@@ -114,7 +114,7 @@ export default function PurchasesPage() {
   }
 
   async function deleteSupplier(id) {
-    if (!window.confirm("Delete this supplier?")) {
+    if (!window.confirm("¿Eliminar este proveedor?")) {
       return;
     }
 
@@ -158,17 +158,17 @@ export default function PurchasesPage() {
   return (
     <div className="space-y-6">
       {!canManage ? (
-        <AccessNotice description="Clerk accounts can review purchase history but cannot create suppliers or receive new purchase orders." />
+        <AccessNotice description="Las cuentas Operador pueden revisar el historial de compras, pero no crear proveedores ni recibir nuevas ordenes." />
       ) : null}
 
       {error ? <div className="rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
       <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-        <SectionCard description="Supplier records for receiving and purchasing workflows." title="Suppliers">
+        <SectionCard description="Ficha de proveedores para los flujos de recepcion y abastecimiento." title="Proveedores">
           {canManage ? (
             <form className="space-y-4" onSubmit={saveSupplier}>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Supplier name</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Nombre del proveedor</label>
                 <input
                   className="input-field"
                   onChange={(event) => setSupplierForm((current) => ({ ...current, name: event.target.value }))}
@@ -177,7 +177,7 @@ export default function PurchasesPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Contact</label>
+                  <label className="mb-2 block text-sm font-medium text-ink">Contacto</label>
                   <input
                     className="input-field"
                     onChange={(event) =>
@@ -204,7 +204,7 @@ export default function PurchasesPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Notes</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Notas</label>
                 <textarea
                   className="text-area-field"
                   onChange={(event) => setSupplierForm((current) => ({ ...current, notes: event.target.value }))}
@@ -213,10 +213,10 @@ export default function PurchasesPage() {
               </div>
               <div className="flex flex-wrap gap-3">
                 <button className="btn-secondary" disabled={saving} type="submit">
-                  {saving ? "Saving..." : editingSupplierId ? "Update supplier" : "Create supplier"}
+                  {saving ? "Guardando..." : editingSupplierId ? "Actualizar proveedor" : "Crear proveedor"}
                 </button>
                 <button className="btn-ghost" onClick={resetSupplierForm} type="button">
-                  Reset
+                  Limpiar
                 </button>
               </div>
             </form>
@@ -224,7 +224,7 @@ export default function PurchasesPage() {
 
           <div className={`space-y-3 ${canManage ? "mt-6" : ""}`}>
             {loading ? (
-              <p className="text-sm text-muted">Loading suppliers...</p>
+              <p className="text-sm text-muted">Cargando proveedores...</p>
             ) : suppliers.length ? (
               suppliers.map((supplier) => (
                 <div key={supplier.id} className="rounded-2xl border border-line bg-cloud/70 p-4">
@@ -232,12 +232,12 @@ export default function PurchasesPage() {
                     <div>
                       <p className="font-semibold text-ink">{supplier.name}</p>
                       <p className="mt-1 text-sm text-muted">
-                        {supplier.contact_name || "No contact"} · {supplier.phone || "No phone"}
+                        {supplier.contact_name || "Sin contacto"} · {supplier.phone || "Sin telefono"}
                       </p>
                     </div>
-                    <span className="chip">{supplier.active ? "Active" : "Inactive"}</span>
+                    <span className="chip">{supplier.active ? "Activo" : "Inactivo"}</span>
                   </div>
-                  <p className="mt-3 text-sm text-muted">{supplier.email || "No email set"}</p>
+                  <p className="mt-3 text-sm text-muted">{supplier.email || "Sin correo definido"}</p>
                   {canManage ? (
                     <div className="mt-4 flex gap-2">
                       <button
@@ -248,27 +248,27 @@ export default function PurchasesPage() {
                         }}
                         type="button"
                       >
-                        Edit
+                        Editar
                       </button>
                       <button className="btn-primary h-10 bg-accent px-4" onClick={() => deleteSupplier(supplier.id)} type="button">
-                        Delete
+                        Eliminar
                       </button>
                     </div>
                   ) : null}
                 </div>
               ))
             ) : (
-              <EmptyState description="Add suppliers to start recording purchases." title="No suppliers available" />
+              <EmptyState description="Agrega proveedores para comenzar a registrar compras." title="No hay proveedores disponibles" />
             )}
           </div>
         </SectionCard>
 
-        <SectionCard description="Receive supplier goods and apply inventory increases automatically." title="Purchase Intake">
+        <SectionCard description="Recibe mercaderia de proveedores y aumenta inventario automaticamente." title="Ingreso de compras">
           {canManage ? (
             <form className="space-y-4" onSubmit={savePurchase}>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Supplier</label>
+                  <label className="mb-2 block text-sm font-medium text-ink">Proveedor</label>
                   <select
                     className="input-field"
                     onChange={(event) =>
@@ -276,7 +276,7 @@ export default function PurchasesPage() {
                     }
                     value={purchaseForm.supplier_id}
                   >
-                    <option value="">Select supplier</option>
+                    <option value="">Selecciona un proveedor</option>
                     {suppliers.map((supplier) => (
                       <option key={supplier.id} value={supplier.id}>
                         {supplier.name}
@@ -285,13 +285,13 @@ export default function PurchasesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Store</label>
+                  <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
                   <select
                     className="input-field"
                     onChange={(event) => setPurchaseForm((current) => ({ ...current, store_id: event.target.value }))}
                     value={purchaseForm.store_id}
                   >
-                    <option value="">Select store</option>
+                    <option value="">Selecciona una tienda</option>
                     {stores.map((store) => (
                       <option key={store.id} value={store.id}>
                         {store.name}
@@ -302,7 +302,7 @@ export default function PurchasesPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Received on</label>
+                  <label className="mb-2 block text-sm font-medium text-ink">Fecha de recepcion</label>
                   <input
                     className="input-field"
                     onChange={(event) => setPurchaseForm((current) => ({ ...current, received_on: event.target.value }))}
@@ -311,14 +311,14 @@ export default function PurchasesPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Status</label>
+                  <label className="mb-2 block text-sm font-medium text-ink">Estado</label>
                   <select
                     className="input-field"
                     onChange={(event) => setPurchaseForm((current) => ({ ...current, status: event.target.value }))}
                     value={purchaseForm.status}
                   >
-                    <option value="received">Received</option>
-                    <option value="draft">Draft</option>
+                    <option value="received">Recibida</option>
+                    <option value="draft">Borrador</option>
                   </select>
                 </div>
               </div>
@@ -331,7 +331,7 @@ export default function PurchasesPage() {
                         onChange={(event) => updatePurchaseItem(index, "product_id", event.target.value)}
                         value={item.product_id}
                       >
-                        <option value="">Select product</option>
+                        <option value="">Selecciona un producto</option>
                         {products.map((product) => (
                           <option key={product.id} value={product.id}>
                             {product.name} ({product.sku})
@@ -342,7 +342,7 @@ export default function PurchasesPage() {
                         className="input-field"
                         min="1"
                         onChange={(event) => updatePurchaseItem(index, "quantity", event.target.value)}
-                        placeholder="Qty"
+                        placeholder="Cant."
                         type="number"
                         value={item.quantity}
                       />
@@ -350,7 +350,7 @@ export default function PurchasesPage() {
                         className="input-field"
                         min="0"
                         onChange={(event) => updatePurchaseItem(index, "unit_cost", event.target.value)}
-                        placeholder="Unit cost"
+                        placeholder="Costo unitario"
                         step="0.01"
                         type="number"
                         value={item.unit_cost}
@@ -361,7 +361,7 @@ export default function PurchasesPage() {
                         onClick={() => removePurchaseItem(index)}
                         type="button"
                       >
-                        Remove
+                        Quitar
                       </button>
                     </div>
                   </div>
@@ -369,11 +369,11 @@ export default function PurchasesPage() {
               </div>
               <div className="flex flex-wrap gap-3">
                 <button className="btn-ghost" onClick={addPurchaseItem} type="button">
-                  Add line item
+                  Agregar linea
                 </button>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Notes</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Notas</label>
                 <textarea
                   className="text-area-field"
                   onChange={(event) => setPurchaseForm((current) => ({ ...current, notes: event.target.value }))}
@@ -381,7 +381,7 @@ export default function PurchasesPage() {
                 />
               </div>
               <button className="btn-secondary w-full" disabled={saving} type="submit">
-                {saving ? "Saving purchase..." : "Record purchase"}
+                {saving ? "Guardando compra..." : "Registrar compra"}
               </button>
             </form>
           ) : null}
@@ -391,10 +391,10 @@ export default function PurchasesPage() {
               <table className="min-w-full text-left text-sm">
                 <thead className="text-xs uppercase tracking-[0.22em] text-muted">
                   <tr>
-                    <th className="pb-4">Reference</th>
-                    <th className="pb-4">Supplier</th>
-                    <th className="pb-4">Store</th>
-                    <th className="pb-4">Date</th>
+                    <th className="pb-4">Referencia</th>
+                    <th className="pb-4">Proveedor</th>
+                    <th className="pb-4">Tienda</th>
+                    <th className="pb-4">Fecha</th>
                     <th className="pb-4 text-right">Total</th>
                   </tr>
                 </thead>
@@ -411,7 +411,7 @@ export default function PurchasesPage() {
                 </tbody>
               </table>
             ) : (
-              <EmptyState description="Purchase transactions will appear once intake begins." title="No purchase history" />
+              <EmptyState description="Las transacciones apareceran una vez que comience el ingreso de compras." title="Sin historial de compras" />
             )}
           </div>
         </SectionCard>

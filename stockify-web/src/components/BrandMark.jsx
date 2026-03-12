@@ -8,7 +8,7 @@ export default function BrandMark({ compact = false }) {
       {!compact && (
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-muted">Stockify</p>
-          <p className="text-lg font-semibold tracking-[-0.04em] text-ink">Retail Operating System</p>
+          <p className="text-lg font-semibold tracking-[-0.04em] text-ink">Sistema operativo retail</p>
         </div>
       )}
     </div>

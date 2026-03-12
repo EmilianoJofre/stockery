@@ -1,10 +1,11 @@
 import { useLocation } from "react-router-dom";
 import { HiArrowRightOnRectangle, HiBars3 } from "react-icons/hi2";
+import { translateRole } from "../lib/translations";
 
 const FALLBACK_META = {
   eyebrow: "Stockify",
-  title: "Inventory Platform",
-  description: "Monitor inventory, sales, and suppliers in one workspace.",
+  title: "Plataforma de inventario",
+  description: "Monitorea inventario, ventas y proveedores desde un solo espacio.",
 };
 
 export default function HeaderBar({ pageMeta, onMenu, onLogout, user }) {
@@ -29,15 +30,15 @@ export default function HeaderBar({ pageMeta, onMenu, onLogout, user }) {
 
         <div className="flex items-center gap-3">
           <div className="hidden rounded-2xl border border-line bg-white px-4 py-3 md:block">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Signed in as</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Sesion iniciada como</p>
             <p className="text-sm font-semibold text-ink">
-              {user?.name} <span className="text-muted">/{user?.role}</span>
+              {user?.name} <span className="text-muted">/{translateRole(user?.role)}</span>
             </p>
           </div>
 
           <button className="btn-primary gap-2 px-4" onClick={onLogout} type="button">
             <HiArrowRightOnRectangle className="text-lg" />
-            <span className="hidden sm:inline">Logout</span>
+            <span className="hidden sm:inline">Salir</span>
           </button>
         </div>
       </div>

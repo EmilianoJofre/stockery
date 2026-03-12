@@ -97,7 +97,7 @@ export default function ProductsPage() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Delete this product?")) {
+    if (!window.confirm("¿Eliminar este producto?")) {
       return;
     }
 
@@ -117,7 +117,7 @@ export default function ProductsPage() {
             <input
               className="input-field w-[220px]"
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search name or SKU"
+              placeholder="Buscar por nombre o SKU"
               value={search}
             />
             <button
@@ -125,27 +125,27 @@ export default function ProductsPage() {
               onClick={() => setLowStockOnly((current) => !current)}
               type="button"
             >
-              {lowStockOnly ? "Showing low stock" : "Low stock only"}
+              {lowStockOnly ? "Mostrando stock bajo" : "Solo stock bajo"}
             </button>
           </div>
         }
-        description="Live product catalog with pricing, thresholds, and store visibility."
-        title="Products"
+        description="Catalogo vivo de productos con precios, umbrales y visibilidad por tienda."
+        title="Productos"
       >
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
         {loading ? (
-          <p className="text-sm text-muted">Loading products...</p>
+          <p className="text-sm text-muted">Cargando productos...</p>
         ) : products.length ? (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="text-xs uppercase tracking-[0.22em] text-muted">
                 <tr>
-                  <th className="pb-4">Product</th>
-                  <th className="pb-4">Price</th>
-                  <th className="pb-4">Inventory</th>
-                  <th className="pb-4">Threshold</th>
-                  {canManage ? <th className="pb-4 text-right">Actions</th> : null}
+                  <th className="pb-4">Producto</th>
+                  <th className="pb-4">Precio</th>
+                  <th className="pb-4">Inventario</th>
+                  <th className="pb-4">Umbral</th>
+                  {canManage ? <th className="pb-4 text-right">Acciones</th> : null}
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -169,7 +169,7 @@ export default function ProductsPage() {
                     <td className="py-4 align-top">
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold text-ink">{product.inventory_total}</span>
-                        {product.low_stock ? <span className="chip chip-alert">Alert</span> : null}
+                        {product.low_stock ? <span className="chip chip-alert">Alerta</span> : null}
                       </div>
                     </td>
                     <td className="py-4 align-top text-muted">{product.low_stock_threshold}</td>
@@ -177,10 +177,10 @@ export default function ProductsPage() {
                       <td className="py-4 align-top">
                         <div className="flex justify-end gap-2">
                           <button className="btn-ghost h-10 px-4" onClick={() => beginEdit(product)} type="button">
-                            Edit
+                            Editar
                           </button>
                           <button className="btn-primary h-10 bg-accent px-4" onClick={() => handleDelete(product.id)} type="button">
-                            Delete
+                            Eliminar
                           </button>
                         </div>
                       </td>
@@ -191,22 +191,22 @@ export default function ProductsPage() {
             </table>
           </div>
         ) : (
-          <EmptyState description="Create your first product to start tracking inventory." title="No products yet" />
+          <EmptyState description="Crea tu primer producto para comenzar a controlar inventario." title="Aun no hay productos" />
         )}
       </SectionCard>
 
       <SectionCard
         description={
           canManage
-            ? "Add new SKUs or update pricing and thresholds."
-            : "Your role has read-only access to the product catalog."
+            ? "Agrega nuevos SKU o actualiza precios y umbrales."
+            : "Tu rol tiene acceso de solo lectura al catalogo de productos."
         }
-        title={editingId ? "Edit Product" : "Product Form"}
+        title={editingId ? "Editar producto" : "Formulario de producto"}
       >
         {canManage ? (
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="mb-2 block text-sm font-medium text-ink">Name</label>
+              <label className="mb-2 block text-sm font-medium text-ink">Nombre</label>
               <input
                 className="input-field"
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
@@ -223,7 +223,7 @@ export default function ProductsPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Price</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Precio</label>
                 <input
                   className="input-field"
                   min="0"
@@ -234,7 +234,7 @@ export default function ProductsPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Low stock threshold</label>
+                <label className="mb-2 block text-sm font-medium text-ink">Umbral de stock bajo</label>
                 <input
                   className="input-field"
                   min="0"
@@ -245,7 +245,7 @@ export default function ProductsPage() {
               </div>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-ink">Description</label>
+              <label className="mb-2 block text-sm font-medium text-ink">Descripcion</label>
               <textarea
                 className="text-area-field"
                 onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
@@ -258,21 +258,21 @@ export default function ProductsPage() {
                 onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))}
                 type="checkbox"
               />
-              Product is active
+              Producto activo
             </label>
             <div className="flex flex-wrap gap-3">
               <button className="btn-secondary" disabled={saving} type="submit">
-                {saving ? "Saving..." : editingId ? "Update product" : "Create product"}
+                {saving ? "Guardando..." : editingId ? "Actualizar producto" : "Crear producto"}
               </button>
               <button className="btn-ghost" onClick={resetForm} type="button">
-                Reset
+                Limpiar
               </button>
             </div>
           </form>
         ) : (
           <EmptyState
-            description="Admin and Manager accounts can create, update, or remove products."
-            title="Read-only access"
+            description="Las cuentas Administrador y Gerente pueden crear, actualizar o eliminar productos."
+            title="Acceso de solo lectura"
           />
         )}
       </SectionCard>

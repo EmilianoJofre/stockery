@@ -15,13 +15,13 @@ class ApplicationController < ActionController::API
     @current_user = User.find_by(id: payload[:user_id]) if payload.present?
     return if @current_user.present?
 
-    render json: { error: "Unauthorized" }, status: :unauthorized
+    render json: { error: "No autorizado" }, status: :unauthorized
   end
 
   def authorize_roles!(*roles)
     return if current_user.present? && roles.map(&:to_s).include?(current_user.role)
 
-    render json: { error: "Forbidden" }, status: :forbidden
+    render json: { error: "Acceso denegado" }, status: :forbidden
   end
 
   def issue_auth_cookie(user)

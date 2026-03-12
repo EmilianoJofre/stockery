@@ -11,14 +11,15 @@ import {
   HiXMark,
 } from "react-icons/hi2";
 import BrandMark from "./BrandMark";
+import { translateRole } from "../lib/translations";
 
 const MODULES = [
-  { to: "/dashboard", label: "Dashboard", icon: HiHomeModern },
-  { to: "/products", label: "Products", icon: HiCube },
-  { to: "/inventory", label: "Inventory", icon: HiCircleStack },
-  { to: "/purchases", label: "Purchases", icon: HiTruck },
-  { to: "/sales", label: "Sales", icon: HiShoppingCart },
-  { to: "/reports", label: "Reports", icon: HiChartBarSquare },
+  { to: "/dashboard", label: "Panel", icon: HiHomeModern },
+  { to: "/products", label: "Productos", icon: HiCube },
+  { to: "/inventory", label: "Inventario", icon: HiCircleStack },
+  { to: "/purchases", label: "Compras", icon: HiTruck },
+  { to: "/sales", label: "Ventas", icon: HiShoppingCart },
+  { to: "/reports", label: "Reportes", icon: HiChartBarSquare },
 ];
 
 function SidebarContent({ onClose, user }) {
@@ -32,7 +33,7 @@ function SidebarContent({ onClose, user }) {
       </div>
 
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Modules</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Modulos</p>
         <HiBars3BottomLeft className="text-muted" />
       </div>
 
@@ -60,12 +61,12 @@ function SidebarContent({ onClose, user }) {
 
       <div className="mt-auto space-y-4">
         <div className="surface-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Session</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Sesion</p>
           <p className="mt-3 text-lg font-semibold text-ink">{user?.name}</p>
           <p className="text-sm text-muted">{user?.email}</p>
           <div className="mt-4 flex items-center gap-2">
-            <span className="chip">{user?.role}</span>
-            <span className="chip">{user?.capabilities?.can_view_reports ? "Full suite" : "Ops only"}</span>
+            <span className="chip">{translateRole(user?.role)}</span>
+            <span className="chip">{user?.capabilities?.can_view_reports ? "Suite completa" : "Solo operacion"}</span>
           </div>
         </div>
       </div>

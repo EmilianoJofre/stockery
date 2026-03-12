@@ -28,7 +28,7 @@ module Sales
 
     def build_items(sale)
       items = Array(@params[:items])
-      raise InventoryManager::Error, "At least one sale item is required" if items.empty?
+      raise InventoryManager::Error, "Debes agregar al menos una linea de venta" if items.empty?
 
       items.each do |item|
         product = Product.find(item[:product_id])
@@ -49,7 +49,7 @@ module Sales
           user: @user,
           quantity_change: -item.quantity,
           reason: "sale",
-          note: "Sold via #{sale.reference}"
+          note: "Vendido por #{sale.reference}"
         )
       end
     end

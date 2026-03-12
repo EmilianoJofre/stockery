@@ -43,17 +43,17 @@ export default function DashboardPage() {
   }
 
   if (error) {
-    return <EmptyState title="Dashboard unavailable" description={error} />;
+    return <EmptyState title="Panel no disponible" description={error} />;
   }
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <StatCard accent label="Monthly sales" note="Closed revenue in the current month." type="currency" value={data.metrics.sales_month} />
-        <StatCard label="Products" note="Catalog entries across all active locations." value={data.metrics.total_products} />
-        <StatCard label="Stores" note="Operating locations connected to Stockify." value={data.metrics.active_stores} />
-        <StatCard label="Low stock" note="SKU and store combinations under threshold." value={data.metrics.low_stock_alerts} />
-        <StatCard label="Monthly purchases" note="Inbound inventory value booked this month." type="currency" value={data.metrics.purchases_month} />
+        <StatCard accent label="Ventas del mes" note="Ingresos cerrados en el mes actual." type="currency" value={data.metrics.sales_month} />
+        <StatCard label="Productos" note="Entradas del catalogo en todas las ubicaciones activas." value={data.metrics.total_products} />
+        <StatCard label="Tiendas" note="Ubicaciones operativas conectadas a Stockify." value={data.metrics.active_stores} />
+        <StatCard label="Stock bajo" note="Combinaciones de SKU y tienda bajo el umbral." value={data.metrics.low_stock_alerts} />
+        <StatCard label="Compras del mes" note="Valor de inventario entrante registrado este mes." type="currency" value={data.metrics.purchases_month} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
@@ -61,18 +61,18 @@ export default function DashboardPage() {
           action={
             <div className="flex flex-wrap gap-3">
               <Link className="btn-secondary" to="/products">
-                Add Product
+                Agregar producto
               </Link>
               <Link className="btn-ghost" to="/reports">
-                View Reports
+                Ver reportes
               </Link>
             </div>
           }
-          description="Immediate focus items requiring commercial or purchasing action."
-          title="Low Stock Alerts"
+          description="Puntos de foco inmediato que requieren accion comercial o de abastecimiento."
+          title="Alertas de stock bajo"
         >
           {loading ? (
-            <p className="text-sm text-muted">Loading dashboard cards...</p>
+            <p className="text-sm text-muted">Cargando tarjetas del panel...</p>
           ) : data.low_stock_alerts.length ? (
             <div className="grid gap-4 md:grid-cols-2">
               {data.low_stock_alerts.map((alert) => (
@@ -84,30 +84,30 @@ export default function DashboardPage() {
                         {alert.sku} · {alert.store_name}
                       </p>
                     </div>
-                    <span className="chip chip-alert">Low stock</span>
+                    <span className="chip chip-alert">Stock bajo</span>
                   </div>
                   <p className="mt-6 text-4xl font-semibold tracking-[-0.05em] text-ink">{alert.quantity}</p>
-                  <p className="mt-2 text-sm text-muted">Threshold: {alert.threshold} units</p>
+                  <p className="mt-2 text-sm text-muted">Umbral: {alert.threshold} unidades</p>
                 </div>
               ))}
             </div>
           ) : (
             <EmptyState
-              description="All tracked stock is currently above its configured threshold."
-              title="No stock alerts"
+              description="Todo el stock monitoreado esta por encima de su umbral configurado."
+              title="Sin alertas de stock"
             />
           )}
         </SectionCard>
 
         <SectionCard
-          description="Shortcut actions for daily operations."
-          title="Quick Actions"
+          description="Acciones rapidas para la operacion diaria."
+          title="Acciones rapidas"
         >
           <div className="space-y-3">
             {[
-              { to: "/inventory", title: "Adjust inventory", copy: "Correct counts, losses, or receiving variances." },
-              { to: "/purchases", title: "Record purchase", copy: "Receive supplier goods and refresh stock levels." },
-              { to: "/sales", title: "Create sale", copy: "Process outbound orders and decrease inventory." },
+              { to: "/inventory", title: "Ajustar inventario", copy: "Corrige conteos, mermas o diferencias de recepcion." },
+              { to: "/purchases", title: "Registrar compra", copy: "Recibe mercaderia de proveedores y actualiza stock." },
+              { to: "/sales", title: "Crear venta", copy: "Procesa ordenes salientes y descuenta inventario." },
             ].map((item) => (
               <Link
                 key={item.title}
@@ -123,18 +123,18 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <SectionCard description="Recently received inventory, suppliers, and values." title="Recent Purchases">
+        <SectionCard description="Inventario recibido recientemente, proveedores y montos." title="Compras recientes">
           {loading ? (
-            <p className="text-sm text-muted">Loading purchases...</p>
+            <p className="text-sm text-muted">Cargando compras...</p>
           ) : data.recent_purchases.length ? (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead className="text-xs uppercase tracking-[0.22em] text-muted">
                   <tr>
-                    <th className="pb-4">Reference</th>
-                    <th className="pb-4">Supplier</th>
-                    <th className="pb-4">Store</th>
-                    <th className="pb-4">Received</th>
+                    <th className="pb-4">Referencia</th>
+                    <th className="pb-4">Proveedor</th>
+                    <th className="pb-4">Tienda</th>
+                    <th className="pb-4">Recibido</th>
                     <th className="pb-4 text-right">Total</th>
                   </tr>
                 </thead>
@@ -152,22 +152,22 @@ export default function DashboardPage() {
               </table>
             </div>
           ) : (
-            <EmptyState description="No purchases have been recorded yet." title="No purchase activity" />
+            <EmptyState description="Aun no se han registrado compras." title="Sin actividad de compras" />
           )}
         </SectionCard>
 
-        <SectionCard description="Most recent outbound transactions and revenue impact." title="Recent Sales">
+        <SectionCard description="Transacciones salientes mas recientes e impacto en ingresos." title="Ventas recientes">
           {loading ? (
-            <p className="text-sm text-muted">Loading sales...</p>
+            <p className="text-sm text-muted">Cargando ventas...</p>
           ) : data.recent_sales.length ? (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead className="text-xs uppercase tracking-[0.22em] text-muted">
                   <tr>
-                    <th className="pb-4">Reference</th>
-                    <th className="pb-4">Customer</th>
-                    <th className="pb-4">Store</th>
-                    <th className="pb-4">Date</th>
+                    <th className="pb-4">Referencia</th>
+                    <th className="pb-4">Cliente</th>
+                    <th className="pb-4">Tienda</th>
+                    <th className="pb-4">Fecha</th>
                     <th className="pb-4 text-right">Total</th>
                   </tr>
                 </thead>
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                   {data.recent_sales.map((sale) => (
                     <tr key={sale.id}>
                       <td className="py-4 font-medium text-ink">{sale.reference}</td>
-                      <td className="py-4 text-muted">{sale.customer_name || "Walk-in customer"}</td>
+                      <td className="py-4 text-muted">{sale.customer_name || "Cliente de mostrador"}</td>
                       <td className="py-4 text-muted">{sale.store.name}</td>
                       <td className="py-4 text-muted">{formatDate(sale.sold_on)}</td>
                       <td className="py-4 text-right font-medium text-ink">{formatCurrency(sale.total_amount)}</td>
@@ -185,7 +185,7 @@ export default function DashboardPage() {
               </table>
             </div>
           ) : (
-            <EmptyState description="No sales have been recorded yet." title="No sales activity" />
+            <EmptyState description="Aun no se han registrado ventas." title="Sin actividad de ventas" />
           )}
         </SectionCard>
       </div>

@@ -17,7 +17,7 @@ module Api
           issue_auth_cookie(user)
           render json: { user: serialize_user(user) }
         else
-          render json: { error: "Invalid email or password" }, status: :unauthorized
+          render json: { error: "Correo o contrasena invalidos" }, status: :unauthorized
         end
       end
 
@@ -25,7 +25,7 @@ module Api
         role = params[:role].to_s
         user = User.find_by(email: DEMO_EMAILS[role])
 
-        return render json: { error: "Demo account not found" }, status: :not_found unless user
+        return render json: { error: "Cuenta demo no encontrada" }, status: :not_found unless user
 
         user.update!(last_login_at: Time.current)
         issue_auth_cookie(user)

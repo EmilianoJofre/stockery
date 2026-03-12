@@ -28,7 +28,7 @@ module Purchases
 
     def build_items(purchase)
       items = Array(@params[:items])
-      raise InventoryManager::Error, "At least one purchase item is required" if items.empty?
+      raise InventoryManager::Error, "Debes agregar al menos una linea de compra" if items.empty?
 
       items.each do |item|
         purchase.purchase_items.build(
@@ -47,7 +47,7 @@ module Purchases
           user: @user,
           quantity_change: item.quantity,
           reason: "purchase",
-          note: "Received via #{purchase.reference}"
+          note: "Recibido por #{purchase.reference}"
         )
       end
     end

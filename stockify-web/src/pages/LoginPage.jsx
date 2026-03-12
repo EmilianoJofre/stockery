@@ -5,20 +5,20 @@ import { useAuth } from "../context/AuthContext";
 const DEMO_ACCOUNTS = [
   {
     role: "admin",
-    label: "Admin",
-    description: "Full platform access for product, purchasing, sales, and reporting workflows.",
+    label: "Administrador",
+    description: "Acceso completo a productos, compras, ventas y reportes.",
     email: "admin@demo.stockify.app",
   },
   {
     role: "manager",
-    label: "Manager",
-    description: "Inventory and commercial oversight with access to operations reporting.",
+    label: "Gerente",
+    description: "Control comercial e inventario con acceso a reportes operativos.",
     email: "manager@demo.stockify.app",
   },
   {
     role: "clerk",
-    label: "Clerk",
-    description: "Sales execution and inventory visibility with a narrower permissions set.",
+    label: "Operador",
+    description: "Ejecucion de ventas y visibilidad de inventario con permisos acotados.",
     email: "clerk@demo.stockify.app",
   },
 ];
@@ -73,21 +73,21 @@ export default function LoginPage() {
           <BrandMark />
 
           <div className="mt-16 max-w-xl">
-            <p className="chip">Investor-grade SaaS</p>
+            <p className="chip">SaaS listo para inversion</p>
             <h1 className="mt-8 max-w-lg font-semibold tracking-[-0.08em] text-ink">
-              Structured inventory control built for modern retail operators.
+              Control de inventario estructurado para operaciones retail modernas.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-muted">
-              Stockify gives teams a premium control layer across products, purchasing, live inventory,
-              and sales performance with role-based access and instant demo entry.
+              Stockify le da a tu equipo una capa premium de control sobre productos, compras,
+              inventario en tiempo real y desempeno comercial, con acceso por roles y entrada demo instantanea.
             </p>
           </div>
 
           <div className="mt-12 grid gap-4 sm:grid-cols-3">
             {[
-              ["Low-stock intelligence", "Track stock risk before it becomes a sales issue."],
-              ["Purchase to shelf", "Receive goods and update inventory in one motion."],
-              ["CSV-ready reporting", "Export operational snapshots for finance and leadership."],
+              ["Inteligencia de stock bajo", "Detecta riesgo de inventario antes de que afecte las ventas."],
+              ["De compra a gondola", "Recibe mercaderia y actualiza inventario en un solo flujo."],
+              ["Reportes listos para CSV", "Exporta snapshots operativos para finanzas y liderazgo."],
             ].map(([title, copy]) => (
               <div key={title} className="surface-card p-5">
                 <p className="text-sm font-semibold text-ink">{title}</p>
@@ -100,10 +100,10 @@ export default function LoginPage() {
 
       <div className="flex w-full items-center justify-center border-t border-white/70 bg-white/70 px-6 py-10 backdrop-blur lg:w-[540px] lg:border-l lg:border-t-0">
         <div className="surface-card w-full max-w-md p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">Secure access</p>
-          <h2 className="mt-4 font-semibold tracking-[-0.05em]">Log in to Stockify</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">Acceso seguro</p>
+          <h2 className="mt-4 font-semibold tracking-[-0.05em]">Ingresa a Stockify</h2>
           <p className="mt-4 text-sm leading-6 text-muted">
-            Use email and password or enter directly with a prepared demo role.
+            Usa tu correo y contrasena o entra directo con un perfil demo preparado.
           </p>
 
           <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
@@ -122,7 +122,7 @@ export default function LoginPage() {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-ink" htmlFor="password">
-                Password
+                Contrasena
               </label>
               <input
                 id="password"
@@ -140,14 +140,14 @@ export default function LoginPage() {
             ) : null}
 
             <button className="btn-primary w-full" disabled={loading} type="submit">
-              {loading ? "Signing in..." : "Continue"}
+              {loading ? "Ingresando..." : "Continuar"}
             </button>
           </form>
 
           <div className="mt-8">
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Demo login</p>
-              <p className="text-xs text-muted">Password: Stockify123!</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Ingreso demo</p>
+              <p className="text-xs text-muted">Contrasena: Stockify123!</p>
             </div>
 
             <div className="space-y-3">

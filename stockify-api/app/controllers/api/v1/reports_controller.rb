@@ -10,12 +10,12 @@ module Api
       def stock_levels
         rows = InventoryLevel.includes(:product, :store).order("store_id ASC, product_id ASC").map do |level|
           {
-            store: level.store.name,
+            tienda: level.store.name,
             sku: level.product.sku,
-            product: level.product.name,
-            quantity: level.quantity,
-            threshold: level.product.low_stock_threshold,
-            low_stock: level.low_stock?
+            producto: level.product.name,
+            cantidad: level.quantity,
+            umbral: level.product.low_stock_threshold,
+            stock_bajo: level.low_stock?
           }
         end
 
@@ -31,9 +31,9 @@ module Api
           .map do |row|
             {
               sku: row.sku,
-              product: row.product_name,
-              quantity_sold: row.quantity_sold.to_i,
-              revenue: row.revenue.to_f.round(2)
+              producto: row.product_name,
+              cantidad_vendida: row.quantity_sold.to_i,
+              ingresos: row.revenue.to_f.round(2)
             }
           end
 
@@ -45,11 +45,11 @@ module Api
           .select(&:low_stock?)
           .map do |level|
             {
-              store: level.store.name,
+              tienda: level.store.name,
               sku: level.product.sku,
-              product: level.product.name,
-              quantity: level.quantity,
-              threshold: level.product.low_stock_threshold
+              producto: level.product.name,
+              cantidad: level.quantity,
+              umbral: level.product.low_stock_threshold
             }
           end
 

@@ -22,7 +22,7 @@ export async function apiRequest(path, options = {}) {
 
   if (!response.ok) {
     const message =
-      typeof payload === "string" ? payload : payload?.error || payload?.message || "Request failed";
+      typeof payload === "string" ? payload : payload?.error || payload?.message || "La solicitud fallo";
     throw new Error(message);
   }
 

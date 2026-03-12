@@ -13,34 +13,34 @@ import { useMemo, useState } from "react";
 
 const PAGE_META = {
   dashboard: {
-    title: "Operational Intelligence",
-    eyebrow: "Dashboard",
-    description: "Track live stock risk, sales velocity, and purchasing activity from one control center.",
+    title: "Inteligencia operativa",
+    eyebrow: "Panel",
+    description: "Sigue el riesgo de stock, la velocidad de venta y la actividad de compra desde un solo centro de control.",
   },
   products: {
-    title: "Product Catalog",
-    eyebrow: "Products",
-    description: "Maintain SKU quality, pricing, and thresholds from a single source of truth.",
+    title: "Catalogo de productos",
+    eyebrow: "Productos",
+    description: "Mantiene la calidad de los SKU, sus precios y umbrales desde una sola fuente de verdad.",
   },
   inventory: {
-    title: "Inventory Control",
-    eyebrow: "Inventory",
-    description: "View stock by location, correct discrepancies, and monitor adjustment history.",
+    title: "Control de inventario",
+    eyebrow: "Inventario",
+    description: "Visualiza stock por ubicacion, corrige diferencias y monitorea el historial de ajustes.",
   },
   purchases: {
-    title: "Supplier Intake",
-    eyebrow: "Purchases",
-    description: "Capture inbound orders and update stock as goods are received.",
+    title: "Recepcion de compras",
+    eyebrow: "Compras",
+    description: "Registra ordenes entrantes y actualiza stock a medida que llegan los productos.",
   },
   sales: {
-    title: "Sales Flow",
-    eyebrow: "Sales",
-    description: "Record outbound orders and reflect inventory impact instantly.",
+    title: "Flujo de ventas",
+    eyebrow: "Ventas",
+    description: "Registra ordenes salientes y refleja el impacto en inventario al instante.",
   },
   reports: {
-    title: "Reporting Suite",
-    eyebrow: "Reports",
-    description: "Review operational summaries and export clean CSV snapshots.",
+    title: "Suite de reportes",
+    eyebrow: "Reportes",
+    description: "Revisa resumenes operativos y exporta snapshots limpios en CSV.",
   },
 };
 
@@ -82,7 +82,7 @@ function AppRoutes() {
           <div className="h-12 w-12 animate-pulse rounded-2xl bg-brand/25" />
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Stockify</p>
-            <p className="text-lg font-medium text-ink">Initializing control center...</p>
+            <p className="text-lg font-medium text-ink">Inicializando centro de control...</p>
           </div>
         </div>
       </div>

@@ -1,22 +1,22 @@
 # Stockify
 
-Stockify is a monorepo SaaS MVP for inventory and retail management with a Rails API backend and a React/Vite frontend.
+Stockify es un MVP SaaS en monorepo para gestion de inventario y retail, con backend Rails API y frontend React/Vite.
 
-## Apps
+## Aplicaciones
 
-- `stockify-api`: Rails 7.1 API, PostgreSQL, JWT auth in `httpOnly` cookies, seeded demo accounts.
-- `stockify-web`: React 18 + Vite + Tailwind dashboard with responsive sidebar, demo login, CRUD flows, and reports.
-- `docker/`: local orchestration for PostgreSQL, API, and web.
+- `stockify-api`: API en Rails 7.1, PostgreSQL, autenticacion JWT en cookies `httpOnly` y cuentas demo precargadas.
+- `stockify-web`: dashboard en React 18 + Vite + Tailwind con sidebar responsive, ingreso demo, flujos CRUD y reportes.
+- `docker/`: orquestacion local para PostgreSQL, API y frontend.
 
-## Demo Accounts
+## Cuentas Demo
 
-All demo users use the same password: `Stockify123!`
+Todas las cuentas demo usan la misma contrasena: `Stockify123!`
 
-- Admin: `admin@demo.stockify.app`
-- Manager: `manager@demo.stockify.app`
-- Clerk: `clerk@demo.stockify.app`
+- Administrador: `admin@demo.stockify.app`
+- Gerente: `manager@demo.stockify.app`
+- Operador: `clerk@demo.stockify.app`
 
-## Local Development
+## Desarrollo Local
 
 ### API
 
@@ -28,7 +28,7 @@ bundle exec rails db:seed
 bundle exec rails server
 ```
 
-### Web
+### Frontend
 
 ```bash
 cd stockify-web
@@ -36,7 +36,7 @@ npm install
 npm run dev
 ```
 
-The frontend proxies `/api` requests in development. Outside Docker it defaults to `http://localhost:3000`; in Docker Compose the proxy target is set to `http://api:3000`.
+El frontend proxy-a las rutas `/api` en desarrollo. Fuera de Docker usa por defecto `http://localhost:3000`; en Docker Compose el target del proxy queda configurado como `http://api:3000`.
 
 ## Docker
 
@@ -44,10 +44,10 @@ The frontend proxies `/api` requests in development. Outside Docker it defaults 
 docker compose -f docker/compose.yml up --build
 ```
 
-Services:
+Servicios:
 
-- Web: `http://127.0.0.1:5174`
+- Frontend: `http://127.0.0.1:5174`
 - API: `http://127.0.0.1:3001`
 - PostgreSQL: `localhost:5432`
 
-The API startup script prepares the database and seeds demo data only when no users exist yet.
+El script de arranque de la API prepara la base de datos y carga datos demo solo cuando aun no existen usuarios.

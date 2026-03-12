@@ -101,19 +101,19 @@ export default function SalesPage() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_1.05fr]">
-      <SectionCard description="Capture outbound orders and decrease inventory in the same transaction." title="Create Sale">
+      <SectionCard description="Captura ordenes salientes y descuenta inventario en la misma transaccion." title="Crear venta">
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
         <form className="space-y-4" onSubmit={saveSale}>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-ink">Store</label>
+              <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
               <select
                 className="input-field"
                 onChange={(event) => setForm((current) => ({ ...current, store_id: event.target.value }))}
                 value={form.store_id}
               >
-                <option value="">Select store</option>
+                <option value="">Selecciona una tienda</option>
                 {stores.map((store) => (
                   <option key={store.id} value={store.id}>
                     {store.name}
@@ -122,7 +122,7 @@ export default function SalesPage() {
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-ink">Sold on</label>
+              <label className="mb-2 block text-sm font-medium text-ink">Fecha de venta</label>
               <input
                 className="input-field"
                 onChange={(event) => setForm((current) => ({ ...current, sold_on: event.target.value }))}
@@ -132,11 +132,11 @@ export default function SalesPage() {
             </div>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-medium text-ink">Customer name</label>
+            <label className="mb-2 block text-sm font-medium text-ink">Nombre del cliente</label>
             <input
               className="input-field"
               onChange={(event) => setForm((current) => ({ ...current, customer_name: event.target.value }))}
-              placeholder="Optional"
+              placeholder="Opcional"
               value={form.customer_name}
             />
           </div>
@@ -150,7 +150,7 @@ export default function SalesPage() {
                     onChange={(event) => updateSaleItem(index, "product_id", event.target.value)}
                     value={item.product_id}
                   >
-                    <option value="">Select product</option>
+                    <option value="">Selecciona un producto</option>
                     {products.map((product) => (
                       <option key={product.id} value={product.id}>
                         {product.name} ({product.sku})
@@ -161,7 +161,7 @@ export default function SalesPage() {
                     className="input-field"
                     min="1"
                     onChange={(event) => updateSaleItem(index, "quantity", event.target.value)}
-                    placeholder="Qty"
+                    placeholder="Cant."
                     type="number"
                     value={item.quantity}
                   />
@@ -169,7 +169,7 @@ export default function SalesPage() {
                     className="input-field"
                     min="0"
                     onChange={(event) => updateSaleItem(index, "unit_price", event.target.value)}
-                    placeholder="Price"
+                    placeholder="Precio"
                     step="0.01"
                     type="number"
                     value={item.unit_price}
@@ -180,7 +180,7 @@ export default function SalesPage() {
                     onClick={() => removeSaleItem(index)}
                     type="button"
                   >
-                    Remove
+                    Quitar
                   </button>
                 </div>
               </div>
@@ -189,12 +189,12 @@ export default function SalesPage() {
 
           <div className="flex flex-wrap gap-3">
             <button className="btn-ghost" onClick={addSaleItem} type="button">
-              Add line item
+              Agregar linea
             </button>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-ink">Notes</label>
+            <label className="mb-2 block text-sm font-medium text-ink">Notas</label>
             <textarea
               className="text-area-field"
               onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
@@ -202,23 +202,23 @@ export default function SalesPage() {
             />
           </div>
           <button className="btn-secondary w-full" disabled={saving} type="submit">
-            {saving ? "Saving sale..." : "Record sale"}
+            {saving ? "Guardando venta..." : "Registrar venta"}
           </button>
         </form>
       </SectionCard>
 
-      <SectionCard description="Recent orders and their commercial value." title="Sales History">
+      <SectionCard description="Ordenes recientes y su impacto comercial." title="Historial de ventas">
         {loading ? (
-          <p className="text-sm text-muted">Loading sales...</p>
+          <p className="text-sm text-muted">Cargando ventas...</p>
         ) : sales.length ? (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="text-xs uppercase tracking-[0.22em] text-muted">
                 <tr>
-                  <th className="pb-4">Reference</th>
-                  <th className="pb-4">Customer</th>
-                  <th className="pb-4">Store</th>
-                  <th className="pb-4">Date</th>
+                  <th className="pb-4">Referencia</th>
+                  <th className="pb-4">Cliente</th>
+                  <th className="pb-4">Tienda</th>
+                  <th className="pb-4">Fecha</th>
                   <th className="pb-4 text-right">Total</th>
                 </tr>
               </thead>
@@ -226,7 +226,7 @@ export default function SalesPage() {
                 {sales.map((sale) => (
                   <tr key={sale.id}>
                     <td className="py-4 font-medium text-ink">{sale.reference}</td>
-                    <td className="py-4 text-muted">{sale.customer_name || "Walk-in customer"}</td>
+                    <td className="py-4 text-muted">{sale.customer_name || "Cliente de mostrador"}</td>
                     <td className="py-4 text-muted">{sale.store.name}</td>
                     <td className="py-4 text-muted">{formatDate(sale.sold_on)}</td>
                     <td className="py-4 text-right font-medium text-ink">{formatCurrency(sale.total_amount)}</td>
@@ -236,7 +236,7 @@ export default function SalesPage() {
             </table>
           </div>
         ) : (
-          <EmptyState description="Sales history will populate as orders are recorded." title="No sales recorded" />
+          <EmptyState description="El historial se poblara a medida que registres ventas." title="Sin ventas registradas" />
         )}
       </SectionCard>
     </div>
