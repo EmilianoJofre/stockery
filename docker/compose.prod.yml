@@ -16,8 +16,8 @@ services:
 
   api:
     build:
-      context: ..
-      dockerfile: stockify-api/Dockerfile
+      context: ../stockify-api
+      dockerfile: Dockerfile
     restart: unless-stopped
     entrypoint: ["/bin/bash", "/usr/local/bin/api-start.prod.sh"]
     command: []
