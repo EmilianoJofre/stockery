@@ -52,28 +52,64 @@ En Lightsail → instancia → **Networking → Firewall**, asegura que estén a
 
 ---
 
-## 4. DNS en tu proveedor de dominio
+## 4. DNS en Cloudflare
 
-Agrega estos registros en el DNS de `stockery.cl`:
+El dominio usa Cloudflare como DNS y CDN. Configuración actual:
 
-| Tipo  | Nombre | Valor          | TTL  |
-|-------|--------|----------------|------|
-| A     | @      | `<IP_ESTATICA>` | 300  |
-| CNAME | www    | stockery.cl    | 300  |
+| Tipo  | Nombre | Valor           | Proxy       |
+|-------|--------|-----------------|-------------|
+| A     | @      | `100.56.6.63`   | Naranja (ON) |
+| CNAME | www    | `stockery.cl`   | Naranja (ON) |
 
-Espera 5-30 min para propagación. Verifica con:
+> Si clonas en un servidor nuevo, primero deja el proxy en **gris (DNS only)** hasta que Caddy haya obtenido el certificado Let's Encrypt. Luego sigue los pasos de Cloudflare abajo.
+
+Verifica propagación:
 
 ```bash
-dig stockery.cl +short
-dig www.stockery.cl +short
+dig @1.1.1.1 stockery.cl +short
+# Debería devolver IPs de Cloudflare (104.x.x.x / 172.x.x.x) con proxy ON
+# o 100.56.6.63 con proxy OFF
 ```
+
+---
+
+## 4b. Configurar Cloudflare SSL (obligatorio antes de activar el proxy)
+
+En **Cloudflare → stockery.cl → SSL/TLS → Overview**, selecciona:
+
+**Full (Strict)**
+
+> ⚠️ Con "Flexible" o sin "Strict" Rails entra en loop de redirect. "Full (Strict)" funciona porque Caddy ya tiene un certificado Let's Encrypt válido.
+
+Luego activa en **SSL/TLS → Edge Certificates**:
+
+- **Always Use HTTPS** → ON
+
+Finalmente activa el proxy naranja en los dos registros DNS.
 
 ---
 
 ## 5. Conectarse a la instancia
 
 ```bash
-ssh -i ~/.ssh/lightsail.pem ubuntu@<IP_ESTATICA>
+# Con alias (ya configurado en ~/.ssh/config):
+ssh stockery-prod
+
+# O directamente:
+ssh -i ~/.ssh/lightsail.pem ubuntu@100.56.6.63
+```
+
+Para configurar el alias localmente:
+
+```bash
+cat >> ~/.ssh/config << 'EOF'
+
+Host stockery-prod
+    HostName 100.56.6.63
+    User ubuntu
+    IdentityFile ~/.ssh/lightsail.pem
+    IdentitiesOnly yes
+EOF
 ```
 
 ---
@@ -83,14 +119,13 @@ ssh -i ~/.ssh/lightsail.pem ubuntu@<IP_ESTATICA>
 En la instancia:
 
 ```bash
-# Descarga el script de bootstrap del repo
-curl -fsSL https://raw.githubusercontent.com/GITHUB_OWNER/stockery/main/scripts/bootstrap.sh -o bootstrap.sh
+# Clona el repo
+sudo git clone https://github.com/EmilianoJofre/stockery.git /opt/stockery
+sudo chown -R ubuntu:ubuntu /opt/stockery
 
-# O clona el repo directamente si ya tienes acceso SSH configurado
-git clone git@github.com:GITHUB_OWNER/stockery.git /opt/stockery
-
-# Ejecuta el bootstrap
-REPO_URL=git@github.com:GITHUB_OWNER/stockery.git bash bootstrap.sh
+# Instala Docker y dependencias
+cd /opt/stockery
+bash scripts/bootstrap.sh
 ```
 
 Reinicia la sesión SSH para activar permisos de Docker:
