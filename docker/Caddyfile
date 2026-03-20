@@ -1,0 +1,32 @@
+{
+	email {$LETSENCRYPT_EMAIL}
+}
+
+# Redirige www → apex
+www.{$APP_DOMAIN} {
+	redir https://{$APP_DOMAIN}{uri} permanent
+}
+
+{$APP_DOMAIN} {
+	encode gzip
+
+	# Proxy de la API al backend Rails
+	handle /api/* {
+		reverse_proxy api:3000 {
+			header_up X-Forwarded-Proto https
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	# Health check interno de Rails (usado por Lightsail / LB)
+	handle /up {
+		reverse_proxy api:3000
+	}
+
+	# Sirve el frontend estático; SPA fallback a index.html
+	handle {
+		root * /srv/public
+		try_files {path} /index.html
+		file_server
+	}
+}

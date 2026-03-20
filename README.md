@@ -51,3 +51,51 @@ Servicios:
 - PostgreSQL: `localhost:5432`
 
 El script de arranque de la API prepara la base de datos y carga datos demo solo cuando aun no existen usuarios.
+
+## Produccion en Lightsail
+
+El stack de produccion despliega en una sola instancia Lightsail con:
+
+- **Dominio**: `https://stockery.cl` (www redirige al apex)
+- **Proxy / TLS**: Caddy 2 (certificados Let's Encrypt automaticos)
+- **API**: Rails en `/api` (same-origin, sin problemas de CORS/cookies)
+- **Frontend**: build estatico de Vite servido por Caddy en `/`
+- **Base de datos**: PostgreSQL 16 con volumen persistente
+
+### Deploy rapido (servidor ya configurado)
+
+```bash
+cd /opt/stockery
+bash scripts/deploy.sh
+```
+
+### Primer deploy (instancia nueva)
+
+```bash
+# 1. Conectar a la instancia
+ssh -i ~/.ssh/lightsail.pem ubuntu@<IP>
+
+# 2. Bootstrap (instala Docker, clona repo)
+REPO_URL=git@github.com:GITHUB_OWNER/stockery.git bash scripts/bootstrap.sh
+
+# 3. Configurar variables de entorno
+cp .env.production.example .env.production && nano .env.production
+
+# 4. Deploy
+bash scripts/deploy.sh
+```
+
+Ver guia completa: [docs/deploy-lightsail.md](docs/deploy-lightsail.md)
+
+### Scripts disponibles
+
+| Script | Descripcion |
+|--------|-------------|
+| `scripts/bootstrap.sh` | Prepara el servidor Lightsail (Docker, repo, env) |
+| `scripts/deploy.sh` | Pull + build + up en produccion |
+| `scripts/rollback.sh [SHA]` | Vuelve al commit anterior o a un SHA especifico |
+| `scripts/backup-db.sh` | Dump comprimido de PostgreSQL (retiene ultimos 7) |
+
+### Variables de entorno
+
+Copia `.env.production.example` a `.env.production` y completa todos los valores. **Nunca commitear `.env.production`**.
