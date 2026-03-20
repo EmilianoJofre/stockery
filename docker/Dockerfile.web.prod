@@ -20,6 +20,6 @@ COPY docker/Caddyfile /etc/caddy/Caddyfile
 
 EXPOSE 80 443
 
-# Caddy admin API corre en :2019 — más confiable que checar el proxy
+# Verificar que Caddy está aceptando conexiones en puerto 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget -qO- http://localhost:2019/ || exit 1
+  CMD nc -zw3 localhost 80 || exit 1
