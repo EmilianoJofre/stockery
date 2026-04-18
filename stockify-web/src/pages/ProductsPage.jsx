@@ -6,7 +6,7 @@ import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
-import { apiRequest } from "../lib/api";
+import { apiRequest, buildApiUrl } from "../lib/api";
 import { getIconComponent } from "../lib/categoryIcons";
 import { formatCurrency } from "../lib/format";
 import { can } from "../lib/permissions";
@@ -194,6 +194,15 @@ export default function ProductsPage() {
 
   const categoryBarActive = selectedCategories.length > 0;
 
+  function buildExportUrl() {
+    const query = new URLSearchParams();
+    if (search) query.set("q", search);
+    if (lowStockOnly) query.set("low_stock", "true");
+    selectedCategories.forEach((id) => query.append("category_ids[]", id));
+    const qs = query.toString();
+    return buildApiUrl(`/api/v1/products/export${qs ? `?${qs}` : ""}`);
+  }
+
   return (
     <>
       <SectionCard
@@ -241,6 +250,13 @@ export default function ProductsPage() {
           >
             {lowStockOnly ? "Mostrando stock bajo" : "Solo stock bajo"}
           </button>
+          <a
+            className="btn-ghost shrink-0"
+            href={buildExportUrl()}
+            download
+          >
+            Exportar CSV
+          </a>
         </div>
 
         {/* Category bar */}
