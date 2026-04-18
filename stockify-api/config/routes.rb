@@ -13,6 +13,8 @@ Rails.application.routes.draw do
       resources :products do
         collection do
           get :export
+          get :import_template
+          post :import
         end
       end
       resources :product_categories, only: [:index, :create, :update]

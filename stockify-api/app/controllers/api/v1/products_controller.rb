@@ -2,7 +2,7 @@ module Api
   module V1
     class ProductsController < BaseController
       before_action :set_product, only: [:show, :update, :destroy]
-      before_action only: [:create, :update, :destroy] do
+      before_action only: [:create, :update, :destroy, :import, :import_template] do
         authorize!("products.create")
       end
 
@@ -19,6 +19,21 @@ module Api
         csv = Products::Exporter.new(scope: records).to_csv
         filename = "productos_#{Time.zone.now.strftime('%Y%m%d%H%M%S')}.csv"
         send_data "\uFEFF#{csv}", filename: filename, type: "text/csv; charset=utf-8", disposition: "attachment"
+      end
+
+      def import_template
+        template = Products::ImportTemplate.new(company: current_company)
+        send_data template.to_xlsx,
+          filename: template.filename,
+          type: template.content_type,
+          disposition: "attachment"
+      end
+
+      def import
+        result = Products::Importer.new(company: current_company, file: params[:file]).call
+        render json: result
+      rescue Products::ImportError => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       def show

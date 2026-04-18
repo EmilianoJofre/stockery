@@ -8,15 +8,27 @@ const SIZE_CLASSES = {
   xl: "max-w-2xl",
 };
 
-export default function Modal({ open, onClose, title, size = "lg", children }) {
+export default function Modal({
+  open,
+  onClose,
+  title,
+  size = "lg",
+  children,
+  headerAction = null,
+  disableClose = false,
+}) {
   const panelRef = useRef(null);
+  const handleClose = () => {
+    if (disableClose) return;
+    onClose();
+  };
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    const handler = (e) => { if (e.key === "Escape") handleClose(); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [open, onClose]);
+  }, [disableClose, open, onClose]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -40,7 +52,7 @@ export default function Modal({ open, onClose, title, size = "lg", children }) {
         <div
           className="fixed inset-0 bg-ink/50 backdrop-blur-[2px]"
           aria-hidden="true"
-          onClick={onClose}
+          onClick={handleClose}
         />
 
         <div
@@ -51,17 +63,21 @@ export default function Modal({ open, onClose, title, size = "lg", children }) {
           aria-labelledby={title ? "modal-title" : undefined}
         >
           <div className="flex items-center justify-between border-b border-line px-6 py-5">
-            <h2 id="modal-title" className="text-xl font-semibold tracking-[-0.03em] text-ink">
+            <h2 id="modal-title" className="min-w-0 text-xl font-semibold tracking-[-0.03em] text-ink">
               {title}
             </h2>
-            <button
-              aria-label="Cerrar"
-              className="btn-ghost h-9 w-9 rounded-xl p-0"
-              onClick={onClose}
-              type="button"
-            >
-              <HiXMark className="text-xl" />
-            </button>
+            <div className="ml-4 flex items-center gap-2">
+              {headerAction}
+              <button
+                aria-label="Cerrar"
+                className="btn-ghost h-9 w-9 rounded-xl p-0"
+                disabled={disableClose}
+                onClick={handleClose}
+                type="button"
+              >
+                <HiXMark className="text-xl" />
+              </button>
+            </div>
           </div>
 
           <div className="px-6 py-6">{children}</div>

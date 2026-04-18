@@ -4,6 +4,7 @@ import CategoryBar from "../components/CategoryBar";
 import CategoryBadge from "../components/CategoryBadge";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
+import ProductImportModal from "../components/ProductImportModal";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest, buildApiUrl } from "../lib/api";
@@ -67,9 +68,11 @@ export default function ProductsPage() {
   const [showCategoryBar, setShowCategoryBar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [importFeedback, setImportFeedback] = useState(null);
   const deferredSearch = useDeferredValue(search);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [isDirty, setIsDirty] = useState(false);
@@ -192,6 +195,11 @@ export default function ProductsPage() {
     }
   }
 
+  async function handleImportCompleted(result) {
+    setImportFeedback(result);
+    await loadProducts();
+  }
+
   const categoryBarActive = selectedCategories.length > 0;
 
   function buildExportUrl() {
@@ -210,9 +218,14 @@ export default function ProductsPage() {
         description="Catálogo vivo de productos con precios, umbrales y visibilidad por tienda."
         action={
           canCreate && (
-            <button className="btn-secondary shrink-0" onClick={openCreate} type="button">
-              Nuevo producto
-            </button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button className="btn-ghost shrink-0" onClick={() => setImportModalOpen(true)} type="button">
+                Importar productos
+              </button>
+              <button className="btn-secondary shrink-0" onClick={openCreate} type="button">
+                Nuevo producto
+              </button>
+            </div>
           )
         }
       >
@@ -272,6 +285,16 @@ export default function ProductsPage() {
         )}
 
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
+        {importFeedback ? (
+          <div className={`mb-4 rounded-2xl px-4 py-3 text-sm ${
+            importFeedback.status === "success" ? "bg-brand/10 text-ink" : "bg-accent/5 text-accent"
+          }`}>
+            <p className="font-medium">{importFeedback.message}</p>
+            <p className="mt-1">
+              Procesadas: {importFeedback.summary.processed_rows} · Creadas: {importFeedback.summary.created} · Actualizadas: {importFeedback.summary.updated} · Errores: {importFeedback.summary.errors}
+            </p>
+          </div>
+        ) : null}
 
         {loading ? (
           <p className="text-sm text-muted">Cargando productos...</p>
@@ -440,6 +463,12 @@ export default function ProductsPage() {
           </div>
         </form>
       </Modal>
+
+      <ProductImportModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImported={handleImportCompleted}
+      />
     </>
   );
 }
