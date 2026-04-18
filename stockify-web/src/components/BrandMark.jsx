@@ -2,9 +2,9 @@ export default function BrandMark({ compact = false }) {
   return (
     <div className="flex items-center gap-3">
       <img
-        src="/stockery-mark.svg"
+        src="/stockery-mark.png"
         alt="Stockery"
-        className={compact ? "h-10 w-10 shrink-0 object-contain" : "h-11 w-11 shrink-0 object-contain"}
+        className={compact ? "h-11 w-11 shrink-0 object-contain" : "h-14 w-14 shrink-0 object-contain"}
       />
 
       {!compact && (
