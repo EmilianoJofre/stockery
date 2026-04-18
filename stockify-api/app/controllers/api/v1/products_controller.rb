@@ -3,11 +3,11 @@ module Api
     class ProductsController < BaseController
       before_action :set_product, only: [:show, :update, :destroy]
       before_action only: [:create, :update, :destroy] do
-        authorize_roles!(:admin, :manager)
+        authorize!("products.create")
       end
 
       def index
-        products = Product.includes(inventory_levels: :store).order(created_at: :desc)
+        products = current_company.products.includes(inventory_levels: :store).order(created_at: :desc)
         products = products.where(active: ActiveModel::Type::Boolean.new.cast(params[:active])) if params.key?(:active)
 
         if params[:q].present?
@@ -26,7 +26,7 @@ module Api
       end
 
       def create
-        product = Product.new(product_params)
+        product = current_company.products.build(product_params)
         product.save!
         ensure_inventory_rows(product)
 
@@ -34,11 +34,13 @@ module Api
       end
 
       def update
+        authorize!("products.edit")
         @product.update!(product_params)
         render json: { product: serialize_product(@product.reload) }
       end
 
       def destroy
+        authorize!("products.delete")
         @product.destroy!
         head :no_content
       end
@@ -46,7 +48,7 @@ module Api
       private
 
       def ensure_inventory_rows(product)
-        Store.find_each do |store|
+        current_company.stores.find_each do |store|
           InventoryLevel.find_or_create_by!(product: product, store: store) do |level|
             level.quantity = 0
           end
@@ -54,7 +56,7 @@ module Api
       end
 
       def set_product
-        @product = Product.includes(inventory_levels: :store).find(params[:id])
+        @product = current_company.products.includes(inventory_levels: :store).find(params[:id])
       end
 
       def product_params

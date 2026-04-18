@@ -1,4 +1,5 @@
 const ROLE_LABELS = {
+  owner: "Propietario",
   admin: "Administrador",
   manager: "Gerente",
   clerk: "Operador",

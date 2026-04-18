@@ -2,9 +2,10 @@ module Api
   module V1
     class AuthController < ApplicationController
       DEMO_EMAILS = {
-        "admin" => "admin@demo.stockify.app",
-        "manager" => "manager@demo.stockify.app",
-        "clerk" => "clerk@demo.stockify.app"
+        "owner"   => "owner@demo.stockery.app",
+        "admin"   => "admin@demo.stockery.app",
+        "manager" => "manager@demo.stockery.app",
+        "clerk"   => "clerk@demo.stockery.app"
       }.freeze
 
       before_action :authenticate_user!, only: [:me, :logout]

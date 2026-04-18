@@ -2,12 +2,15 @@ module Api
   module V1
     class SuppliersController < BaseController
       before_action :set_supplier, only: [:show, :update, :destroy]
-      before_action only: [:create, :update, :destroy] do
-        authorize_roles!(:admin, :manager)
+      before_action only: [:create, :update] do
+        authorize!("suppliers.create")
+      end
+      before_action only: [:destroy] do
+        authorize!("suppliers.delete")
       end
 
       def index
-        suppliers = Supplier.order(:name)
+        suppliers = current_company.suppliers.order(:name)
         render json: { suppliers: suppliers.map { |supplier| serialize_supplier(supplier) } }
       end
 
@@ -16,11 +19,12 @@ module Api
       end
 
       def create
-        supplier = Supplier.create!(supplier_params)
+        supplier = current_company.suppliers.create!(supplier_params)
         render json: { supplier: serialize_supplier(supplier) }, status: :created
       end
 
       def update
+        authorize!("suppliers.edit")
         @supplier.update!(supplier_params)
         render json: { supplier: serialize_supplier(@supplier) }
       end
@@ -33,7 +37,7 @@ module Api
       private
 
       def set_supplier
-        @supplier = Supplier.find(params[:id])
+        @supplier = current_company.suppliers.find(params[:id])
       end
 
       def supplier_params

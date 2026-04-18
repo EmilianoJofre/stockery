@@ -1,7 +1,8 @@
 module Purchases
   class Creator
-    def initialize(user:, params:)
+    def initialize(user:, params:, company: nil)
       @user = user
+      @company = company || user.company
       @params = params.deep_symbolize_keys
     end
 

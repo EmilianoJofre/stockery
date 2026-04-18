@@ -10,9 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_12_143045) do
+ActiveRecord::Schema[7.1].define(version: 2026_04_17_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "companies", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_companies_on_slug", unique: true
+  end
 
   create_table "inventory_adjustments", force: :cascade do |t|
     t.bigint "product_id", null: false
@@ -39,6 +48,15 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_12_143045) do
     t.index ["store_id"], name: "index_inventory_levels_on_store_id"
   end
 
+  create_table "permissions", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "description"
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_permissions_on_key", unique: true
+  end
+
   create_table "products", force: :cascade do |t|
     t.string "name", null: false
     t.string "sku", null: false
@@ -48,6 +66,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_12_143045) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "company_id", null: false
+    t.index ["company_id"], name: "index_products_on_company_id"
     t.index ["sku"], name: "index_products_on_sku", unique: true
   end
 
@@ -78,6 +98,15 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_12_143045) do
     t.index ["store_id"], name: "index_purchases_on_store_id"
     t.index ["supplier_id"], name: "index_purchases_on_supplier_id"
     t.index ["user_id"], name: "index_purchases_on_user_id"
+  end
+
+  create_table "role_permissions", force: :cascade do |t|
+    t.string "role", null: false
+    t.bigint "permission_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["permission_id"], name: "index_role_permissions_on_permission_id"
+    t.index ["role", "permission_id"], name: "index_role_permissions_on_role_and_permission_id", unique: true
   end
 
   create_table "sale_items", force: :cascade do |t|
@@ -115,7 +144,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_12_143045) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "company_id", null: false
     t.index ["code"], name: "index_stores_on_code", unique: true
+    t.index ["company_id"], name: "index_stores_on_company_id"
   end
 
   create_table "suppliers", force: :cascade do |t|
@@ -127,6 +158,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_12_143045) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "company_id", null: false
+    t.index ["company_id"], name: "index_suppliers_on_company_id"
+  end
+
+  create_table "user_permissions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "permission_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["permission_id"], name: "index_user_permissions_on_permission_id"
+    t.index ["user_id", "permission_id"], name: "index_user_permissions_on_user_id_and_permission_id", unique: true
+    t.index ["user_id"], name: "index_user_permissions_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -137,6 +180,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_12_143045) do
     t.datetime "last_login_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "company_id", null: false
+    t.boolean "active", default: true, null: false
+    t.index ["company_id"], name: "index_users_on_company_id"
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
@@ -145,13 +191,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_12_143045) do
   add_foreign_key "inventory_adjustments", "users"
   add_foreign_key "inventory_levels", "products"
   add_foreign_key "inventory_levels", "stores"
+  add_foreign_key "products", "companies"
   add_foreign_key "purchase_items", "products"
   add_foreign_key "purchase_items", "purchases"
   add_foreign_key "purchases", "stores"
   add_foreign_key "purchases", "suppliers"
   add_foreign_key "purchases", "users"
+  add_foreign_key "role_permissions", "permissions"
   add_foreign_key "sale_items", "products"
   add_foreign_key "sale_items", "sales"
   add_foreign_key "sales", "stores"
   add_foreign_key "sales", "users"
+  add_foreign_key "stores", "companies"
+  add_foreign_key "suppliers", "companies"
+  add_foreign_key "user_permissions", "permissions"
+  add_foreign_key "user_permissions", "users"
+  add_foreign_key "users", "companies"
 end

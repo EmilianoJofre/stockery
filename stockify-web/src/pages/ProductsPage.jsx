@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useState } from "react";
 import EmptyState from "../components/EmptyState";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
+import { can } from "../lib/permissions";
 import { apiRequest } from "../lib/api";
 import { formatCurrency } from "../lib/format";
 
@@ -16,7 +17,7 @@ const EMPTY_FORM = {
 
 export default function ProductsPage() {
   const { user } = useAuth();
-  const canManage = user?.capabilities?.can_manage_products;
+  const canManage = can(user, "products.create");
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);

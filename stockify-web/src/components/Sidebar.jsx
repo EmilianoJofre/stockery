@@ -8,21 +8,44 @@ import {
   HiHomeModern,
   HiShoppingCart,
   HiTruck,
+  HiUserGroup,
   HiXMark,
 } from "react-icons/hi2";
 import BrandMark from "./BrandMark";
 import { translateRole } from "../lib/translations";
+import { can } from "../lib/permissions";
 
-const MODULES = [
-  { to: "/dashboard", label: "Panel", icon: HiHomeModern },
-  { to: "/products", label: "Productos", icon: HiCube },
-  { to: "/inventory", label: "Inventario", icon: HiCircleStack },
-  { to: "/purchases", label: "Compras", icon: HiTruck },
-  { to: "/sales", label: "Ventas", icon: HiShoppingCart },
-  { to: "/reports", label: "Reportes", icon: HiChartBarSquare },
+const CORE_MODULES = [
+  { to: "/dashboard", label: "Panel",      icon: HiHomeModern     },
+  { to: "/products",  label: "Productos",  icon: HiCube           },
+  { to: "/inventory", label: "Inventario", icon: HiCircleStack    },
+  { to: "/purchases", label: "Compras",    icon: HiTruck          },
+  { to: "/sales",     label: "Ventas",     icon: HiShoppingCart   },
+  { to: "/reports",   label: "Reportes",   icon: HiChartBarSquare },
 ];
 
+const ADMIN_MODULES = [
+  { to: "/users", label: "Usuarios", icon: HiUserGroup, permission: "users.view" },
+];
+
+function SidebarLink({ to, label, icon: Icon, onClose }) {
+  return (
+    <NavLink
+      className={({ isActive }) => clsx("sidebar-link", isActive && "sidebar-link-active")}
+      onClick={onClose}
+      to={to}
+    >
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
+        <Icon className="text-xl" />
+      </span>
+      <span>{label}</span>
+    </NavLink>
+  );
+}
+
 function SidebarContent({ onClose, user }) {
+  const adminModules = ADMIN_MODULES.filter((m) => can(user, m.permission));
+
   return (
     <div className="flex h-full flex-col rounded-none bg-white/95 px-5 py-6 shadow-soft backdrop-blur lg:rounded-r-[28px]">
       <div className="mb-8 flex items-center justify-between">
@@ -38,35 +61,32 @@ function SidebarContent({ onClose, user }) {
       </div>
 
       <nav className="space-y-2">
-        {MODULES.map((module) => {
-          const Icon = module.icon;
-
-          return (
-            <NavLink
-              key={module.to}
-              className={({ isActive }) =>
-                clsx("sidebar-link", isActive && "sidebar-link-active")
-              }
-              onClick={onClose}
-              to={module.to}
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
-                <Icon className="text-xl" />
-              </span>
-              <span>{module.label}</span>
-            </NavLink>
-          );
-        })}
+        {CORE_MODULES.map((m) => (
+          <SidebarLink key={m.to} to={m.to} label={m.label} icon={m.icon} onClose={onClose} />
+        ))}
       </nav>
+
+      {adminModules.length > 0 && (
+        <>
+          <div className="mb-3 mt-6 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Administracion</p>
+          </div>
+          <nav className="space-y-2">
+            {adminModules.map((m) => (
+              <SidebarLink key={m.to} to={m.to} label={m.label} icon={m.icon} onClose={onClose} />
+            ))}
+          </nav>
+        </>
+      )}
 
       <div className="mt-auto space-y-4">
         <div className="surface-card p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Sesion</p>
           <p className="mt-3 text-lg font-semibold text-ink">{user?.name}</p>
           <p className="text-sm text-muted">{user?.email}</p>
-          <div className="mt-4 flex items-center gap-2">
+          <p className="mt-1 text-xs text-muted">{user?.company?.name}</p>
+          <div className="mt-3 flex items-center gap-2">
             <span className="chip">{translateRole(user?.role)}</span>
-            <span className="chip">{user?.capabilities?.can_view_reports ? "Suite completa" : "Solo operacion"}</span>
           </div>
         </div>
       </div>

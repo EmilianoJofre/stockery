@@ -9,6 +9,7 @@ import ProductsPage from "./pages/ProductsPage";
 import PurchasesPage from "./pages/PurchasesPage";
 import ReportsPage from "./pages/ReportsPage";
 import SalesPage from "./pages/SalesPage";
+import UsersPage from "./pages/UsersPage";
 import { useMemo, useState } from "react";
 
 const PAGE_META = {
@@ -42,6 +43,11 @@ const PAGE_META = {
     eyebrow: "Reportes",
     description: "Revisa resumenes operativos y exporta snapshots limpios en CSV.",
   },
+  users: {
+    title: "Gestion de usuarios",
+    eyebrow: "Usuarios",
+    description: "Administra los miembros de tu compania, sus roles y permisos de acceso.",
+  },
 };
 
 function Shell() {
@@ -64,6 +70,7 @@ function Shell() {
             <Route path="/purchases" element={<PurchasesPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/users" element={<UsersPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>

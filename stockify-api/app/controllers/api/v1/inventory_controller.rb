@@ -2,11 +2,13 @@ module Api
   module V1
     class InventoryController < BaseController
       before_action only: [:adjust] do
-        authorize_roles!(:admin, :manager)
+        authorize!("inventory.adjust")
       end
 
       def index
-        levels = InventoryLevel.includes(:product, :store).joins(:product, :store).order("stores.name ASC, products.name ASC")
+        levels = company_inventory_levels.includes(:product, :store)
+          .joins(:product, :store)
+          .order("stores.name ASC, products.name ASC")
 
         if params[:q].present?
           query = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
@@ -29,9 +31,12 @@ module Api
       end
 
       def adjust
+        product = current_company.products.find(adjust_params[:product_id])
+        store = current_company.stores.find(adjust_params[:store_id])
+
         level = InventoryManager.adjust!(
-          product: Product.find(adjust_params[:product_id]),
-          store: Store.find(adjust_params[:store_id]),
+          product: product,
+          store: store,
           user: current_user,
           quantity_change: adjust_params[:quantity_change],
           reason: adjust_params[:reason],
@@ -43,8 +48,14 @@ module Api
 
       private
 
+      def company_inventory_levels
+        InventoryLevel.joins(:product).where(products: { company_id: current_company.id })
+      end
+
       def recent_adjustment_payload(limit: 10)
         InventoryAdjustment.includes(:product, :store, :user)
+          .joins(:product)
+          .where(products: { company_id: current_company.id })
           .order(created_at: :desc)
           .limit(limit)
           .map { |adjustment| serialize_adjustment(adjustment) }

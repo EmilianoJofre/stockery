@@ -12,12 +12,23 @@ class ApplicationController < ActionController::API
 
   def authenticate_user!
     payload = JsonWebToken.decode(auth_token)
-    @current_user = User.find_by(id: payload[:user_id]) if payload.present?
-    return if @current_user.present?
+    @current_user = User.includes(:company, :extra_permissions).find_by(id: payload[:user_id]) if payload.present?
+    return if @current_user.present? && @current_user.active?
 
     render json: { error: "No autorizado" }, status: :unauthorized
   end
 
+  def current_company
+    current_user&.company
+  end
+
+  def authorize!(permission_key)
+    return if current_user&.can?(permission_key)
+
+    render json: { error: "Acceso denegado" }, status: :forbidden
+  end
+
+  # Kept for backward-compat in auth_controller demo_login flow — prefer authorize!
   def authorize_roles!(*roles)
     return if current_user.present? && roles.map(&:to_s).include?(current_user.role)
 
@@ -40,24 +51,16 @@ class ApplicationController < ActionController::API
     cookies.delete(:stockify_token)
   end
 
-  def capabilities_for(user)
-    {
-      can_manage_products: user.admin? || user.manager?,
-      can_manage_inventory: user.admin? || user.manager?,
-      can_manage_purchases: user.admin? || user.manager?,
-      can_manage_sales: true,
-      can_view_reports: user.admin? || user.manager?
-    }
-  end
-
   def serialize_user(user)
     {
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
+      active: user.active,
       last_login_at: user.last_login_at,
-      capabilities: capabilities_for(user)
+      company: { id: user.company_id, name: user.company.name },
+      permissions: user.effective_permission_keys
     }
   end
 

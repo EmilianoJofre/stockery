@@ -1,7 +1,8 @@
 module Sales
   class Creator
-    def initialize(user:, params:)
+    def initialize(user:, params:, company: nil)
       @user = user
+      @company = company || user.company
       @params = params.deep_symbolize_keys
     end
 
@@ -31,7 +32,7 @@ module Sales
       raise InventoryManager::Error, "Debes agregar al menos una linea de venta" if items.empty?
 
       items.each do |item|
-        product = Product.find(item[:product_id])
+        product = @company.products.find(item[:product_id])
 
         sale.sale_items.build(
           product: product,

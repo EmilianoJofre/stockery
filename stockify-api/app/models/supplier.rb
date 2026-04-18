@@ -1,4 +1,6 @@
 class Supplier < ApplicationRecord
+  belongs_to :company
+
   has_many :purchases
 
   validates :name, presence: true

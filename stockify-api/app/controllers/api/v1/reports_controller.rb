@@ -4,27 +4,34 @@ module Api
   module V1
     class ReportsController < BaseController
       before_action do
-        authorize_roles!(:admin, :manager)
+        authorize!("reports.view")
       end
 
       def stock_levels
-        rows = InventoryLevel.includes(:product, :store).order("store_id ASC, product_id ASC").map do |level|
-          {
-            tienda: level.store.name,
-            sku: level.product.sku,
-            producto: level.product.name,
-            cantidad: level.quantity,
-            umbral: level.product.low_stock_threshold,
-            stock_bajo: level.low_stock?
-          }
-        end
+        company_product_ids = current_company.products.pluck(:id)
+
+        rows = InventoryLevel.includes(:product, :store)
+          .where(product_id: company_product_ids)
+          .order("store_id ASC, product_id ASC")
+          .map do |level|
+            {
+              tienda: level.store.name,
+              sku: level.product.sku,
+              producto: level.product.name,
+              cantidad: level.quantity,
+              umbral: level.product.low_stock_threshold,
+              stock_bajo: level.low_stock?
+            }
+          end
 
         respond_with_report("stock-levels", rows)
       end
 
       def top_selling_products
+        company_store_ids = current_company.stores.pluck(:id)
+
         rows = SaleItem.joins(:product, :sale)
-          .merge(Sale.completed)
+          .merge(Sale.completed.where(store_id: company_store_ids))
           .group("products.id", "products.name", "products.sku")
           .select("products.name AS product_name, products.sku AS sku, SUM(sale_items.quantity) AS quantity_sold, SUM(sale_items.subtotal) AS revenue")
           .order("SUM(sale_items.quantity) DESC")
@@ -41,7 +48,10 @@ module Api
       end
 
       def low_stock
+        company_product_ids = current_company.products.pluck(:id)
+
         rows = InventoryLevel.includes(:product, :store)
+          .where(product_id: company_product_ids)
           .select(&:low_stock?)
           .map do |level|
             {
