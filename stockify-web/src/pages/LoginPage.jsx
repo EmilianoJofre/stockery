@@ -7,28 +7,29 @@ const DEMO_ACCOUNTS = [
     role: "admin",
     label: "Administrador",
     description: "Acceso completo a productos, compras, ventas y reportes.",
-    email: "admin@demo.stockify.app",
+    email: "admin@demo.stockery.app",
   },
   {
     role: "manager",
     label: "Gerente",
     description: "Control comercial e inventario con acceso a reportes operativos.",
-    email: "manager@demo.stockify.app",
+    email: "manager@demo.stockery.app",
   },
   {
     role: "clerk",
     label: "Operador",
     description: "Ejecucion de ventas y visibilidad de inventario con permisos acotados.",
-    email: "clerk@demo.stockify.app",
+    email: "clerk@demo.stockery.app",
   },
 ];
 
 export default function LoginPage() {
   const { login, loginWithDemo } = useAuth();
   const [form, setForm] = useState({
-    email: "admin@demo.stockify.app",
+    email: "admin@demo.stockery.app",
     password: "Stockify123!",
   });
+  const [demoAccountsOpen, setDemoAccountsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -78,7 +79,7 @@ export default function LoginPage() {
               Control de inventario estructurado para operaciones retail modernas.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-muted">
-              Stockify le da a tu equipo una capa premium de control sobre productos, compras,
+              Stockery le da a tu equipo una capa premium de control sobre productos, compras,
               inventario en tiempo real y desempeno comercial, con acceso por roles y entrada demo instantanea.
             </p>
           </div>
@@ -101,7 +102,7 @@ export default function LoginPage() {
       <div className="flex w-full items-center justify-center border-t border-white/70 bg-white/70 px-6 py-10 backdrop-blur lg:w-[540px] lg:border-l lg:border-t-0">
         <div className="surface-card w-full max-w-md p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">Acceso seguro</p>
-          <h2 className="mt-4 font-semibold tracking-[-0.05em]">Ingresa a Stockify</h2>
+          <h2 className="mt-4 font-semibold tracking-[-0.05em]">Ingresa a Stockery</h2>
           <p className="mt-4 text-sm leading-6 text-muted">
             Usa tu correo y contrasena o entra directo con un perfil demo preparado.
           </p>
@@ -145,31 +146,44 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8">
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Ingreso demo</p>
-              <p className="text-xs text-muted">Contrasena: Stockify123!</p>
-            </div>
+            <button
+              aria-controls="demo-accounts-panel"
+              aria-expanded={demoAccountsOpen}
+              className="flex w-full items-center justify-between rounded-2xl border border-line bg-cloud/70 px-4 py-4 text-left transition hover:border-ink/15 hover:bg-white"
+              onClick={() => setDemoAccountsOpen((current) => !current)}
+              type="button"
+            >
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Ingreso demo</p>
+                <p className="mt-2 text-sm font-semibold text-ink">Ver cuentas demo</p>
+              </div>
+              <span className="text-sm font-medium text-muted">
+                {demoAccountsOpen ? "Ocultar" : "Desplegar"}
+              </span>
+            </button>
 
-            <div className="space-y-3">
-              {DEMO_ACCOUNTS.map((account) => (
-                <button
-                  key={account.role}
-                  className="w-full rounded-2xl border border-line bg-white px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-ink/15 hover:shadow-panel"
-                  disabled={loading}
-                  onClick={() => handleDemo(account)}
-                  type="button"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold text-ink">{account.label}</p>
-                      <p className="mt-1 text-sm text-muted">{account.email}</p>
-                      <p className="mt-3 text-sm leading-6 text-muted">{account.description}</p>
+            {demoAccountsOpen ? (
+              <div id="demo-accounts-panel" className="mt-4 space-y-3">
+                {DEMO_ACCOUNTS.map((account) => (
+                  <button
+                    key={account.role}
+                    className="w-full rounded-2xl border border-line bg-white px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-ink/15 hover:shadow-panel"
+                    disabled={loading}
+                    onClick={() => handleDemo(account)}
+                    type="button"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-ink">{account.label}</p>
+                        <p className="mt-1 text-sm text-muted">{account.email}</p>
+                        <p className="mt-3 text-sm leading-6 text-muted">{account.description}</p>
+                      </div>
+                      <span className="chip">{account.label}</span>
                     </div>
-                    <span className="chip">{account.label}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

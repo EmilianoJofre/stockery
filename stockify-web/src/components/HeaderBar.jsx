@@ -3,7 +3,7 @@ import { HiArrowRightOnRectangle, HiBars3 } from "react-icons/hi2";
 import { translateRole } from "../lib/translations";
 
 const FALLBACK_META = {
-  eyebrow: "Stockify",
+  eyebrow: "Stockery",
   title: "Plataforma de inventario",
   description: "Monitorea inventario, ventas y proveedores desde un solo espacio.",
 };

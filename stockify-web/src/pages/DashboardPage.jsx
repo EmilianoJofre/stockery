@@ -53,7 +53,7 @@ export default function DashboardPage() {
       <div className={`grid gap-4 md:grid-cols-2 ${singleStore ? "xl:grid-cols-4" : "xl:grid-cols-5"}`}>
         <StatCard accent label="Ventas del mes" note="Ingresos cerrados en el mes actual." type="currency" value={data.metrics.sales_month} />
         <StatCard label="Productos" note="Entradas del catalogo en todas las ubicaciones activas." value={data.metrics.total_products} />
-        {!singleStore && <StatCard label="Tiendas" note="Ubicaciones operativas conectadas a Stockify." value={data.metrics.active_stores} />}
+        {!singleStore && <StatCard label="Tiendas" note="Ubicaciones operativas conectadas a Stockery." value={data.metrics.active_stores} />}
         <StatCard label="Stock bajo" note="Combinaciones de SKU y tienda bajo el umbral." value={data.metrics.low_stock_alerts} />
         <StatCard label="Compras del mes" note="Valor de inventario entrante registrado este mes." type="currency" value={data.metrics.purchases_month} />
       </div>

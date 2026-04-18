@@ -88,7 +88,7 @@ function AppRoutes() {
         <div className="surface-card flex w-full max-w-md items-center gap-4 p-6">
           <div className="h-12 w-12 animate-pulse rounded-2xl bg-brand/25" />
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Stockify</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Stockery</p>
             <p className="text-lg font-medium text-ink">Inicializando centro de control...</p>
           </div>
         </div>
