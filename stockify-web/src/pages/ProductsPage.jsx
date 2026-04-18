@@ -150,40 +150,40 @@ export default function ProductsPage() {
         title="Productos"
         description="Catálogo vivo de productos con precios, umbrales y visibilidad por tienda."
         action={
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              className="input-field w-[220px]"
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nombre o SKU"
-              value={search}
-            />
-            {categories.length > 0 && (
-              <select
-                className="input-field w-[180px]"
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <option value="">Todas las categorías</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            )}
-            <button
-              className={`btn-ghost ${lowStockOnly ? "border-accent bg-accent/5 text-accent" : ""}`}
-              onClick={() => setLowStockOnly((v) => !v)}
-              type="button"
-            >
-              {lowStockOnly ? "Mostrando stock bajo" : "Solo stock bajo"}
+          canCreate && (
+            <button className="btn-secondary shrink-0" onClick={openCreate} type="button">
+              Nuevo producto
             </button>
-            {canCreate && (
-              <button className="btn-secondary" onClick={openCreate} type="button">
-                Nuevo producto
-              </button>
-            )}
-          </div>
+          )
         }
       >
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          <input
+            className="input-field min-w-[200px] flex-1"
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o SKU"
+            value={search}
+          />
+          {categories.length > 0 && (
+            <select
+              className="input-field w-[180px] shrink-0"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="">Todas las categorías</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          )}
+          <button
+            className={`btn-ghost shrink-0 ${lowStockOnly ? "border-accent bg-accent/5 text-accent" : ""}`}
+            onClick={() => setLowStockOnly((v) => !v)}
+            type="button"
+          >
+            {lowStockOnly ? "Mostrando stock bajo" : "Solo stock bajo"}
+          </button>
+        </div>
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
         {loading ? (
