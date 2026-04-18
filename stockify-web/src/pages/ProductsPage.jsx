@@ -1,5 +1,5 @@
-import { useDeferredValue, useEffect, useRef, useState } from "react";
-import { HiChevronDown, HiXMark } from "react-icons/hi2";
+import { useDeferredValue, useEffect, useState } from "react";
+import { HiAdjustmentsHorizontal, HiXMark } from "react-icons/hi2";
 import CategoryBadge from "../components/CategoryBadge";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
@@ -20,79 +20,41 @@ const EMPTY_FORM = {
   product_category_id: "",
 };
 
-// ─── Category filter dropdown ─────────────────────────────────────────────────
+// ─── Category bar (multi-select) ──────────────────────────────────────────────
 
-function CategoryFilter({ categories, value, onChange }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const selected = categories.find((c) => String(c.id) === String(value));
-
-  function select(id) {
-    onChange(id);
-    setOpen(false);
-  }
-
-  if (categories.length === 0) return null;
-
+function CategoryBar({ categories, selected, onToggle, onClear }) {
   return (
-    <div className="relative shrink-0" ref={ref}>
-      <button
-        className="input-field flex w-[200px] cursor-pointer items-center gap-2 text-left"
-        onClick={() => setOpen((v) => !v)}
-        type="button"
-      >
-        {selected ? (
-          <>
-            {(() => { const Icon = getIconComponent(selected.icon); return <Icon className="h-4 w-4 shrink-0 text-muted" />; })()}
-            <span className="flex-1 truncate text-ink">{selected.name}</span>
-            <HiXMark
-              className="h-4 w-4 shrink-0 text-muted hover:text-ink"
-              onClick={(e) => { e.stopPropagation(); select(""); }}
-            />
-          </>
-        ) : (
-          <>
-            <span className="flex-1 text-muted">Todas las categorías</span>
-            <HiChevronDown className="h-4 w-4 shrink-0 text-muted" />
-          </>
-        )}
-      </button>
-
-      {open && (
-        <div className="absolute left-0 top-full z-20 mt-1 w-[220px] overflow-hidden rounded-2xl border border-line bg-surface shadow-lg">
-          <button
-            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-muted hover:bg-line/40"
-            onClick={() => select("")}
-            type="button"
-          >
-            <span className="h-4 w-4" />
-            Todas las categorías
-          </button>
-          <div className="h-px bg-line" />
-          {categories.map((c) => {
-            const Icon = getIconComponent(c.icon);
-            return (
-              <button
-                key={c.id}
-                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-line/40 ${String(value) === String(c.id) ? "bg-brand/5 font-medium text-brand" : "text-ink"}`}
-                onClick={() => select(String(c.id))}
-                type="button"
-              >
-                <Icon className="h-4 w-4 shrink-0 text-muted" />
-                {c.name}
-              </button>
-            );
-          })}
-        </div>
+    <div className="flex items-start gap-2 border-t border-line pt-4">
+      <div className="flex flex-1 flex-wrap gap-2">
+        {categories.map((c) => {
+          const Icon = getIconComponent(c.icon);
+          const active = selected.includes(String(c.id));
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onToggle(String(c.id))}
+              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors ${
+                active
+                  ? "border-brand bg-brand/8 font-medium text-brand"
+                  : "border-line bg-surface text-muted hover:border-brand/30 hover:text-ink"
+              }`}
+            >
+              <Icon className={`h-4 w-4 shrink-0 ${active ? "text-brand" : "text-muted"}`} />
+              {c.name}
+            </button>
+          );
+        })}
+      </div>
+      {selected.length > 0 && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted hover:text-ink"
+        >
+          <HiXMark className="h-3.5 w-3.5" />
+          Limpiar
+        </button>
       )}
     </div>
   );
@@ -140,7 +102,8 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [showCategoryBar, setShowCategoryBar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -153,12 +116,12 @@ export default function ProductsPage() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => { loadCategories(); }, []);
-  useEffect(() => { loadProducts(); }, [deferredSearch, lowStockOnly, categoryFilter]);
+  useEffect(() => { loadProducts(); }, [deferredSearch, lowStockOnly, selectedCategories]);
 
   async function loadCategories() {
     try {
-      const response = await apiRequest("/api/v1/product_categories");
-      setCategories(response.product_categories);
+      const res = await apiRequest("/api/v1/product_categories");
+      setCategories(res.product_categories);
     } catch {
       // non-critical
     }
@@ -171,14 +134,24 @@ export default function ProductsPage() {
       const query = new URLSearchParams();
       if (deferredSearch) query.set("q", deferredSearch);
       if (lowStockOnly) query.set("low_stock", "true");
-      if (categoryFilter) query.set("category_id", categoryFilter);
-      const response = await apiRequest(`/api/v1/products${query.toString() ? `?${query}` : ""}`);
-      setProducts(response.products);
+      selectedCategories.forEach((id) => query.append("category_ids[]", id));
+      const res = await apiRequest(`/api/v1/products${query.toString() ? `?${query}` : ""}`);
+      setProducts(res.products);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  function toggleCategory(id) {
+    setSelectedCategories((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  }
+
+  function clearCategories() {
+    setSelectedCategories([]);
   }
 
   function patch(field, value) {
@@ -258,6 +231,8 @@ export default function ProductsPage() {
     }
   }
 
+  const categoryBarActive = selectedCategories.length > 0;
+
   return (
     <>
       <SectionCard
@@ -271,18 +246,33 @@ export default function ProductsPage() {
           )
         }
       >
-        <div className="mb-5 flex flex-wrap items-center gap-3">
+        {/* Toolbar */}
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           <input
             className="input-field min-w-[200px] flex-1"
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre o SKU"
             value={search}
           />
-          <CategoryFilter
-            categories={categories}
-            value={categoryFilter}
-            onChange={setCategoryFilter}
-          />
+          {categories.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowCategoryBar((v) => !v)}
+              className={`btn-ghost shrink-0 flex items-center gap-2 ${
+                categoryBarActive || showCategoryBar
+                  ? "border-brand bg-brand/5 text-brand"
+                  : ""
+              }`}
+            >
+              <HiAdjustmentsHorizontal className="h-4 w-4" />
+              Categorías
+              {categoryBarActive && (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-semibold text-white">
+                  {selectedCategories.length}
+                </span>
+              )}
+            </button>
+          )}
           <button
             className={`btn-ghost shrink-0 ${lowStockOnly ? "border-accent bg-accent/5 text-accent" : ""}`}
             onClick={() => setLowStockOnly((v) => !v)}
@@ -291,6 +281,18 @@ export default function ProductsPage() {
             {lowStockOnly ? "Mostrando stock bajo" : "Solo stock bajo"}
           </button>
         </div>
+
+        {/* Category bar */}
+        {showCategoryBar && categories.length > 0 && (
+          <div className="mb-5">
+            <CategoryBar
+              categories={categories}
+              selected={selectedCategories}
+              onToggle={toggleCategory}
+              onClear={clearCategories}
+            />
+          </div>
+        )}
 
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 

@@ -12,7 +12,7 @@ module Api
           .order(created_at: :desc)
 
         products = products.where(active: ActiveModel::Type::Boolean.new.cast(params[:active])) if params.key?(:active)
-        products = products.where(product_category_id: params[:category_id]) if params[:category_id].present?
+        products = products.where(product_category_id: params[:category_ids]) if params[:category_ids].present?
 
         if params[:q].present?
           query = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
