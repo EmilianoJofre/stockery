@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_04_17_000003) do
+ActiveRecord::Schema[7.1].define(version: 2026_04_18_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -57,6 +57,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_17_000003) do
     t.index ["key"], name: "index_permissions_on_key", unique: true
   end
 
+  create_table "product_categories", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "name"], name: "index_product_categories_on_company_id_and_name", unique: true
+    t.index ["company_id", "slug"], name: "index_product_categories_on_company_id_and_slug", unique: true
+    t.index ["company_id"], name: "index_product_categories_on_company_id"
+  end
+
   create_table "products", force: :cascade do |t|
     t.string "name", null: false
     t.string "sku", null: false
@@ -67,7 +79,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_17_000003) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "company_id", null: false
+    t.bigint "product_category_id"
     t.index ["company_id"], name: "index_products_on_company_id"
+    t.index ["product_category_id"], name: "index_products_on_product_category_id"
     t.index ["sku"], name: "index_products_on_sku", unique: true
   end
 
@@ -191,7 +205,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_17_000003) do
   add_foreign_key "inventory_adjustments", "users"
   add_foreign_key "inventory_levels", "products"
   add_foreign_key "inventory_levels", "stores"
+  add_foreign_key "product_categories", "companies"
   add_foreign_key "products", "companies"
+  add_foreign_key "products", "product_categories"
   add_foreign_key "purchase_items", "products"
   add_foreign_key "purchase_items", "purchases"
   add_foreign_key "purchases", "stores"
