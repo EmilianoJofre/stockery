@@ -9,13 +9,13 @@ module Sales
     def call
       Sale.transaction do
         sale = Sale.new(
-          store_id: @params[:store_id],
-          status: normalized_status,
-          reference: @params[:reference],
-          sold_on: @params[:sold_on].presence || Date.current,
+          store:         resolve_store!,
+          status:        normalized_status,
+          reference:     @params[:reference],
+          sold_on:       @params[:sold_on].presence || Date.current,
           customer_name: @params[:customer_name],
-          notes: @params[:notes],
-          user: @user
+          notes:         @params[:notes],
+          user:          @user
         )
 
         build_items(sale)
@@ -27,6 +27,17 @@ module Sales
 
     private
 
+    def resolve_store!
+      store_id = @params[:store_id].presence
+      if store_id
+        @company.stores.find(store_id)
+      elsif (default = @company.default_store)
+        default
+      else
+        raise InventoryManager::Error, "La compañía no tiene ninguna tienda activa"
+      end
+    end
+
     def build_items(sale)
       items = Array(@params[:items])
       raise InventoryManager::Error, "Debes agregar al menos una linea de venta" if items.empty?
@@ -35,8 +46,8 @@ module Sales
         product = @company.products.find(item[:product_id])
 
         sale.sale_items.build(
-          product: product,
-          quantity: item[:quantity],
+          product:    product,
+          quantity:   item[:quantity],
           unit_price: item[:unit_price].presence || product.price
         )
       end
@@ -45,12 +56,12 @@ module Sales
     def commit_inventory!(sale)
       sale.sale_items.each do |item|
         InventoryManager.adjust!(
-          product: item.product,
-          store: sale.store,
-          user: @user,
+          product:         item.product,
+          store:           sale.store,
+          user:            @user,
           quantity_change: -item.quantity,
-          reason: "sale",
-          note: "Vendido por #{sale.reference}"
+          reason:          "sale",
+          note:            "Vendido por #{sale.reference}"
         )
       end
     end
@@ -58,7 +69,6 @@ module Sales
     def normalized_status
       status = @params[:status].to_s
       return status if Sale.statuses.key?(status)
-
       "completed"
     end
   end

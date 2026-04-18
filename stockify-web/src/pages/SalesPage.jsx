@@ -82,7 +82,8 @@ export default function SalesPage() {
   }
 
   function openModal() {
-    setForm(EMPTY_FORM);
+    const defaultStoreId = stores.length === 1 ? String(stores[0].id) : "";
+    setForm({ ...EMPTY_FORM, store_id: defaultStoreId });
     setIsDirty(false);
     setFormError("");
     setModalOpen(true);
@@ -147,7 +148,7 @@ export default function SalesPage() {
                 <tr>
                   <th className="pb-4">Referencia</th>
                   <th className="pb-4">Cliente</th>
-                  <th className="pb-4">Tienda</th>
+                  {stores.length > 1 && <th className="pb-4">Tienda</th>}
                   <th className="pb-4">Fecha</th>
                   <th className="pb-4 text-right">Total</th>
                 </tr>
@@ -157,7 +158,7 @@ export default function SalesPage() {
                   <tr key={sale.id}>
                     <td className="py-4 font-medium text-ink">{sale.reference}</td>
                     <td className="py-4 text-muted">{sale.customer_name || "Cliente de mostrador"}</td>
-                    <td className="py-4 text-muted">{sale.store.name}</td>
+                    {stores.length > 1 && <td className="py-4 text-muted">{sale.store.name}</td>}
                     <td className="py-4 text-muted">{formatDate(sale.sold_on)}</td>
                     <td className="py-4 text-right font-medium text-ink">{formatCurrency(sale.total_amount)}</td>
                   </tr>
@@ -179,14 +180,16 @@ export default function SalesPage() {
             <div className="rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{formError}</div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
-              <select className="input-field" required value={form.store_id} onChange={(e) => patchForm("store_id", e.target.value)}>
-                <option value="">Selecciona una tienda</option>
-                {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
+          <div className={`grid gap-4 ${stores.length > 1 ? "sm:grid-cols-2" : ""}`}>
+            {stores.length > 1 && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
+                <select className="input-field" required value={form.store_id} onChange={(e) => patchForm("store_id", e.target.value)}>
+                  <option value="">Selecciona una tienda</option>
+                  {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+            )}
             <div>
               <label className="mb-2 block text-sm font-medium text-ink">Fecha de venta</label>
               <input className="input-field" type="date" value={form.sold_on} onChange={(e) => patchForm("sold_on", e.target.value)} />

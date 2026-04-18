@@ -317,16 +317,18 @@ export default function ProductsPage() {
                     <td className="py-4 align-top">
                       <p className="font-medium text-ink">{product.name}</p>
                       <p className="mt-0.5 text-sm text-muted">{product.sku}</p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {product.store_quantities.map((store) => (
-                          <span
-                            key={`${product.id}-${store.store_id}`}
-                            className={`chip ${store.low_stock ? "chip-alert" : ""}`}
-                          >
-                            {store.store_name}: {store.quantity}
-                          </span>
-                        ))}
-                      </div>
+                      {product.store_quantities.length > 1 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {product.store_quantities.map((store) => (
+                            <span
+                              key={`${product.id}-${store.store_id}`}
+                              className={`chip ${store.low_stock ? "chip-alert" : ""}`}
+                            >
+                              {store.store_name}: {store.quantity}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="py-4 align-top">
                       <CategoryBadge category={product.product_category} />

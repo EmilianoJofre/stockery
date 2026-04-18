@@ -32,7 +32,9 @@ module Api
 
       def adjust
         product = current_company.products.find(adjust_params[:product_id])
-        store = current_company.stores.find(adjust_params[:store_id])
+        store_id = adjust_params[:store_id].presence || current_company.default_store&.id
+        raise InventoryManager::Error, "La compañía no tiene ninguna tienda activa" unless store_id
+        store = current_company.stores.find(store_id)
 
         level = InventoryManager.adjust!(
           product: product,

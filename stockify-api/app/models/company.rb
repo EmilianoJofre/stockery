@@ -5,6 +5,10 @@ class Company < ApplicationRecord
   has_many :products, dependent: :destroy
   has_many :product_categories, dependent: :destroy
 
+  def default_store
+    stores.active.order(:created_at).first
+  end
+
   validates :name, :slug, presence: true
   validates :slug, uniqueness: true
 

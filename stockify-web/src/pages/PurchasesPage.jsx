@@ -101,7 +101,8 @@ export default function PurchasesPage() {
   }
 
   function openPurchase() {
-    setPurchaseForm(EMPTY_PURCHASE);
+    const defaultStoreId = stores.length === 1 ? String(stores[0].id) : "";
+    setPurchaseForm({ ...EMPTY_PURCHASE, store_id: defaultStoreId });
     setPurchaseDirty(false);
     setPurchaseError("");
     setPurchaseOpen(true);
@@ -233,7 +234,7 @@ export default function PurchasesPage() {
                 <tr>
                   <th className="pb-4">Referencia</th>
                   <th className="pb-4">Proveedor</th>
-                  <th className="pb-4">Tienda</th>
+                  {stores.length > 1 && <th className="pb-4">Tienda</th>}
                   <th className="pb-4">Fecha</th>
                   <th className="pb-4 text-right">Total</th>
                 </tr>
@@ -243,7 +244,7 @@ export default function PurchasesPage() {
                   <tr key={purchase.id}>
                     <td className="py-4 font-medium text-ink">{purchase.reference}</td>
                     <td className="py-4 text-muted">{purchase.supplier.name}</td>
-                    <td className="py-4 text-muted">{purchase.store.name}</td>
+                    {stores.length > 1 && <td className="py-4 text-muted">{purchase.store.name}</td>}
                     <td className="py-4 text-muted">{formatDate(purchase.received_on)}</td>
                     <td className="py-4 text-right font-medium text-ink">{formatCurrency(purchase.total_amount)}</td>
                   </tr>
@@ -335,7 +336,7 @@ export default function PurchasesPage() {
             <div className="rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{purchaseError}</div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={`grid gap-4 ${stores.length > 1 ? "sm:grid-cols-2" : ""}`}>
             <div>
               <label className="mb-2 block text-sm font-medium text-ink">Proveedor</label>
               <select className="input-field" required value={purchaseForm.supplier_id} onChange={(e) => patchPurchase("supplier_id", e.target.value)}>
@@ -343,13 +344,15 @@ export default function PurchasesPage() {
                 {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
-              <select className="input-field" required value={purchaseForm.store_id} onChange={(e) => patchPurchase("store_id", e.target.value)}>
-                <option value="">Selecciona una tienda</option>
-                {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
+            {stores.length > 1 && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
+                <select className="input-field" required value={purchaseForm.store_id} onChange={(e) => patchPurchase("store_id", e.target.value)}>
+                  <option value="">Selecciona una tienda</option>
+                  {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

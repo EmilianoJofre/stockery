@@ -82,10 +82,11 @@ export default function InventoryPage() {
   }
 
   function openAdjust(item = null) {
+    const defaultStoreId = stores.length === 1 ? String(stores[0].id) : "";
     setForm(
       item
-        ? { ...EMPTY_ADJUSTMENT, product_id: item.product_id, store_id: item.store_id }
-        : EMPTY_ADJUSTMENT
+        ? { ...EMPTY_ADJUSTMENT, product_id: item.product_id, store_id: item.store_id || defaultStoreId }
+        : { ...EMPTY_ADJUSTMENT, store_id: defaultStoreId }
     );
     setIsDirty(false);
     setFormError("");
@@ -131,16 +132,18 @@ export default function InventoryPage() {
               placeholder="Buscar inventario"
               value={search}
             />
-            <select
-              className="input-field w-[170px]"
-              onChange={(e) => setStoreId(e.target.value)}
-              value={storeId}
-            >
-              <option value="">Todas las tiendas</option>
-              {stores.map((store) => (
-                <option key={store.id} value={store.id}>{store.name}</option>
-              ))}
-            </select>
+            {stores.length > 1 && (
+              <select
+                className="input-field w-[170px]"
+                onChange={(e) => setStoreId(e.target.value)}
+                value={storeId}
+              >
+                <option value="">Todas las tiendas</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>{store.name}</option>
+                ))}
+              </select>
+            )}
             <button
               className={`btn-ghost ${lowStockOnly ? "border-accent bg-accent/5 text-accent" : ""}`}
               onClick={() => setLowStockOnly((v) => !v)}
@@ -166,7 +169,7 @@ export default function InventoryPage() {
               <thead className="text-xs uppercase tracking-[0.22em] text-muted">
                 <tr>
                   <th className="pb-4">Producto</th>
-                  <th className="pb-4">Tienda</th>
+                  {stores.length > 1 && <th className="pb-4">Tienda</th>}
                   <th className="pb-4">Cantidad</th>
                   <th className="pb-4">Umbral</th>
                   {canManage && <th className="pb-4 text-right">Acción</th>}
@@ -179,7 +182,7 @@ export default function InventoryPage() {
                       <p className="font-medium text-ink">{item.product_name}</p>
                       <p className="text-sm text-muted">{item.sku}</p>
                     </td>
-                    <td className="py-4 text-muted">{item.store_name}</td>
+                    {stores.length > 1 && <td className="py-4 text-muted">{item.store_name}</td>}
                     <td className="py-4">
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold text-ink">{item.quantity}</span>
@@ -258,13 +261,15 @@ export default function InventoryPage() {
             </select>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
-            <select className="input-field" required value={form.store_id} onChange={(e) => patch("store_id", e.target.value)}>
-              <option value="">Selecciona una tienda</option>
-              {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
+          {stores.length > 1 && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
+              <select className="input-field" required value={form.store_id} onChange={(e) => patch("store_id", e.target.value)}>
+                <option value="">Selecciona una tienda</option>
+                {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="mb-2 block text-sm font-medium text-ink">Cambio de cantidad</label>

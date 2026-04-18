@@ -93,54 +93,43 @@ end
 # ─── Usuarios ─────────────────────────────────────────────────────────────────
 
 owner = User.create!(
-  company: company,
-  name: "Carlos Muñoz",
-  email: "owner@demo.stockery.app",
-  role: :owner,
-  password: "Stockify123!",
-  password_confirmation: "Stockify123!"
+  company: company, name: "Carlos Muñoz",
+  email: "owner@demo.stockery.app", role: :owner,
+  password: "Stockify123!", password_confirmation: "Stockify123!"
 )
 
 admin = User.create!(
-  company: company,
-  name: "Valentina Soto",
-  email: "admin@demo.stockery.app",
-  role: :admin,
-  password: "Stockify123!",
-  password_confirmation: "Stockify123!"
+  company: company, name: "Valentina Soto",
+  email: "admin@demo.stockery.app", role: :admin,
+  password: "Stockify123!", password_confirmation: "Stockify123!"
 )
 
 manager = User.create!(
-  company: company,
-  name: "Jorge Espinoza",
-  email: "manager@demo.stockery.app",
-  role: :manager,
-  password: "Stockify123!",
-  password_confirmation: "Stockify123!"
+  company: company, name: "Jorge Espinoza",
+  email: "manager@demo.stockery.app", role: :manager,
+  password: "Stockify123!", password_confirmation: "Stockify123!"
 )
 
 clerk = User.create!(
-  company: company,
-  name: "Camila Torres",
-  email: "clerk@demo.stockery.app",
-  role: :clerk,
-  password: "Stockify123!",
-  password_confirmation: "Stockify123!"
+  company: company, name: "Camila Torres",
+  email: "clerk@demo.stockery.app", role: :clerk,
+  password: "Stockify123!", password_confirmation: "Stockify123!"
 )
 
-# ─── Tiendas ──────────────────────────────────────────────────────────────────
+# ─── Tienda principal ─────────────────────────────────────────────────────────
 
-stores = [
-  { name: "Local Principal", code: "PRI", address: "Av. Grecia 1240, Ñuñoa" },
-  { name: "Sucursal Norte",  code: "NOR", address: "Recoleta 880, Recoleta" }
-].map { |attrs| company.stores.create!(attrs) }
+store = company.stores.create!(
+  name: "Tienda Principal",
+  code: "PRI",
+  address: "Av. Grecia 1240, Ñuñoa"
+)
 
 # ─── Proveedores ──────────────────────────────────────────────────────────────
 
 suppliers = [
-  { name: "Distribuidora Central", contact_name: "Pedro Álvarez",  email: "ventas@distcentral.cl",  phone: "+56 9 8100 1001", notes: "Proveedor principal abarrotes y bebidas" },
-  { name: "Lácteos del Sur",       contact_name: "Ana González",   email: "pedidos@lacteossur.cl",  phone: "+56 9 8100 1002", notes: "Entrega martes y viernes" },
-  { name: "Limpio Chile",          contact_name: "Roberto Pino",   email: "ventas@limpiochile.cl",  phone: "+56 9 8100 1003", notes: "Aseo hogar e higiene personal" }
+  { name: "Distribuidora Central", contact_name: "Pedro Álvarez",  email: "ventas@distcentral.cl", phone: "+56 9 8100 1001", notes: "Abarrotes, bebidas y snacks" },
+  { name: "Lácteos del Sur",       contact_name: "Ana González",   email: "pedidos@lacteossur.cl", phone: "+56 9 8100 1002", notes: "Lácteos, carnes frías y congelados" },
+  { name: "Limpio Chile",          contact_name: "Roberto Pino",   email: "ventas@limpiochile.cl", phone: "+56 9 8100 1003", notes: "Higiene, limpieza y varios" }
 ].map { |attrs| company.suppliers.create!(attrs) }
 
 # ─── Categorías de productos ──────────────────────────────────────────────────
@@ -163,50 +152,70 @@ CATEGORY_SEEDS = [
 ].freeze
 
 cats = {}
-CATEGORY_SEEDS.each do |attrs|
-  cats[attrs[:slug]] = company.product_categories.create!(attrs)
-end
+CATEGORY_SEEDS.each { |attrs| cats[attrs[:slug]] = company.product_categories.create!(attrs) }
 
-# ─── Productos ────────────────────────────────────────────────────────────────
+# ─── Productos (2 por categoría) ──────────────────────────────────────────────
 
-products = [
+PRODUCT_CATALOG = [
   # Despensa
-  { name: "Arroz SOS 1kg",         sku: "ARR-001", description: "Arroz largo grano fino.",                    price:  1_490, low_stock_threshold: 20, product_category: cats["despensa"] },
-  { name: "Fideos Carozzi 400g",   sku: "FID-001", description: "Fideos spaghetti N°5.",                      price:    990, low_stock_threshold: 20, product_category: cats["despensa"] },
-  { name: "Aceite Cuisine 1L",     sku: "ACE-001", description: "Aceite vegetal mix.",                        price:  2_490, low_stock_threshold: 15, product_category: cats["despensa"] },
-  { name: "Mayonesa Hellmann's 400g", sku: "MAY-001", description: "Mayonesa clásica.",                       price:  2_190, low_stock_threshold: 12, product_category: cats["despensa"] },
+  { name: "Arroz SOS 1kg",              sku: "ARR-001", price:  1_490, threshold: 20, category: "despensa",        description: "Arroz largo grano fino." },
+  { name: "Aceite Cuisine 1L",          sku: "ACE-001", price:  2_490, threshold: 15, category: "despensa",        description: "Aceite vegetal mix." },
   # Bebidas
-  { name: "Coca-Cola 1.5L",        sku: "COC-001", description: "Bebida gaseosa.",                           price:  1_890, low_stock_threshold: 24, product_category: cats["bebidas"] },
-  { name: "Agua Cachantun 1.5L",   sku: "AGU-001", description: "Agua mineral sin gas.",                     price:    690, low_stock_threshold: 24, product_category: cats["bebidas"] },
-  { name: "Jugo Watt's Naranja 1L", sku: "JUG-001", description: "Néctar natural naranja.",                  price:  1_290, low_stock_threshold: 18, product_category: cats["bebidas"] },
+  { name: "Coca-Cola 1.5L",             sku: "COC-001", price:  1_890, threshold: 24, category: "bebidas",         description: "Bebida gaseosa." },
+  { name: "Agua Cachantun 1.5L",        sku: "AGU-001", price:    690, threshold: 24, category: "bebidas",         description: "Agua mineral sin gas." },
   # Snacks y Dulces
-  { name: "Papas Fritas Lays 100g", sku: "PAP-001", description: "Papas fritas clásicas.",                   price:    990, low_stock_threshold: 30, product_category: cats["snacks"] },
-  { name: "Galletas Oreo 176g",    sku: "GAL-001", description: "Galleta rellena cacao.",                    price:  1_590, low_stock_threshold: 20, product_category: cats["snacks"] },
-  { name: "Chocolate Sahne-Nuss",  sku: "CHO-001", description: "Chocolate con avellanas.",                  price:  1_490, low_stock_threshold: 15, product_category: cats["snacks"] },
+  { name: "Papas Fritas Lays 100g",     sku: "PAP-001", price:    990, threshold: 30, category: "snacks",          description: "Papas fritas clásicas." },
+  { name: "Chocolate Sahne-Nuss 100g",  sku: "CHO-001", price:  1_490, threshold: 20, category: "snacks",          description: "Chocolate con avellanas." },
   # Lácteos y Huevos
-  { name: "Leche Soprole 1L",      sku: "LEC-001", description: "Leche entera UHT.",                        price:  1_190, low_stock_threshold: 30, product_category: cats["lacteos"] },
-  { name: "Yogurt Colun Natural 150g", sku: "YOG-001", description: "Yogurt batido natural.",               price:    590, low_stock_threshold: 20, product_category: cats["lacteos"] },
-  { name: "Huevos Blancos Docena", sku: "HUE-001", description: "Huevos blancos tamaño L.",                 price:  3_490, low_stock_threshold: 10, product_category: cats["lacteos"] },
+  { name: "Leche Soprole 1L",           sku: "LEC-001", price:  1_190, threshold: 30, category: "lacteos",         description: "Leche entera UHT." },
+  { name: "Huevos Blancos Docena",      sku: "HUE-001", price:  3_490, threshold: 10, category: "lacteos",         description: "Huevos blancos tamaño L." },
   # Carnes y Embutidos
-  { name: "Jamón de Pavo Luncheon 100g", sku: "JAM-001", description: "Jamón de pavo laminado.",           price:  1_290, low_stock_threshold: 15, product_category: cats["carnes"] },
-  { name: "Mortadela Super Pollo 100g",  sku: "MOR-001", description: "Mortadela clásica.",                price:    890, low_stock_threshold: 15, product_category: cats["carnes"] },
+  { name: "Jamón de Pavo 100g",         sku: "JAM-001", price:  1_290, threshold: 15, category: "carnes",          description: "Jamón de pavo laminado." },
+  { name: "Mortadela 100g",             sku: "MOR-001", price:    890, threshold: 15, category: "carnes",          description: "Mortadela clásica." },
+  # Frutas y Verduras
+  { name: "Tomate 1kg",                 sku: "TOM-001", price:  1_190, threshold: 10, category: "frutas-verduras", description: "Tomate larga vida." },
+  { name: "Limón Bolsa 1kg",            sku: "LIM-001", price:    890, threshold: 10, category: "frutas-verduras", description: "Limones de exportación." },
+  # Congelados
+  { name: "Helado Bresler Vainilla 1L", sku: "HEL-001", price:  3_490, threshold:  8, category: "congelados",      description: "Helado familiar vainilla." },
+  { name: "Supremas de Pollo 500g",     sku: "SUP-001", price:  2_990, threshold: 10, category: "congelados",      description: "Supremas apanadas." },
+  # Panadería
+  { name: "Marraqueta 6 unidades",      sku: "MAR-001", price:    890, threshold: 10, category: "panaderia",       description: "Pan marraqueta fresco." },
+  { name: "Pan Molde Ideal 550g",       sku: "PAN-001", price:  1_690, threshold: 12, category: "panaderia",       description: "Pan molde blanco." },
   # Limpieza del Hogar
-  { name: "Detergente Omo 800g",   sku: "DET-001", description: "Detergente en polvo.",                     price:  3_990, low_stock_threshold: 12, product_category: cats["limpieza"] },
-  { name: "Cloro Clorox 1L",       sku: "CLO-001", description: "Blanqueador multiuso.",                    price:  1_490, low_stock_threshold: 10, product_category: cats["limpieza"] },
+  { name: "Detergente Omo 800g",        sku: "DET-001", price:  3_990, threshold: 12, category: "limpieza",        description: "Detergente en polvo." },
+  { name: "Cloro Clorox 1L",            sku: "CLO-001", price:  1_490, threshold: 10, category: "limpieza",        description: "Blanqueador multiuso." },
   # Higiene Personal
-  { name: "Papel Higiénico Elite 4u", sku: "PAP-HIG-001", description: "Papel higiénico doble hoja.",      price:  2_490, low_stock_threshold: 20, product_category: cats["higiene"] },
-  { name: "Shampoo Head & Shoulders 200ml", sku: "SHA-001", description: "Shampoo anticaspa.",             price:  3_990, low_stock_threshold: 10, product_category: cats["higiene"] },
+  { name: "Papel Higiénico Elite 4u",   sku: "PAH-001", price:  2_490, threshold: 20, category: "higiene",         description: "Papel higiénico doble hoja." },
+  { name: "Jabón Dove Barra 90g",       sku: "JAB-001", price:    990, threshold: 15, category: "higiene",         description: "Jabón hidratante." },
+  # Bebés y Niños
+  { name: "Pañales Pampers M x30",      sku: "PAN-BEB-001", price: 12_990, threshold: 5, category: "bebes",        description: "Pañales medianos." },
+  { name: "Leche Nan 1 400g",           sku: "NAN-001", price:  8_990, threshold:  5, category: "bebes",           description: "Leche de inicio en polvo." },
   # Mascotas
-  { name: "Dog Chow Adulto 3kg",   sku: "DOG-001", description: "Alimento completo para perro adulto.",    price:  8_990, low_stock_threshold: 8,  product_category: cats["mascotas"] },
+  { name: "Dog Chow Adulto 3kg",        sku: "DOG-001", price:  8_990, threshold:  8, category: "mascotas",        description: "Alimento completo perro adulto." },
+  { name: "Friskies Gato 1.5kg",        sku: "FRI-001", price:  5_490, threshold:  8, category: "mascotas",        description: "Alimento completo para gato." },
   # Ferretería y Varios
-  { name: "Pilas Duracell AA x4",  sku: "PIL-001", description: "Pilas alcalinas AA.",                     price:  2_990, low_stock_threshold: 10, product_category: cats["ferreteria"] }
-].map { |attrs| company.products.create!(attrs) }
+  { name: "Pilas Duracell AA x4",       sku: "PIL-001", price:  2_990, threshold: 10, category: "ferreteria",      description: "Pilas alcalinas AA." },
+  { name: "Ampolleta LED 9W",           sku: "AMP-001", price:  1_990, threshold:  8, category: "ferreteria",      description: "Ampolleta LED rosca E27." },
+  # General
+  { name: "Encendedor",                 sku: "ENC-001", price:    490, threshold: 20, category: "general",         description: "Encendedor plástico." },
+  { name: "Fósforos Caja x50",          sku: "FOS-001", price:    290, threshold: 30, category: "general",         description: "Caja de fósforos." }
+].freeze
 
-stores.each do |store|
-  products.each do |product|
-    InventoryLevel.create!(store: store, product: product, quantity: 0)
-  end
+products = PRODUCT_CATALOG.map do |attrs|
+  p = company.products.create!(
+    name:                 attrs[:name],
+    sku:                  attrs[:sku],
+    price:                attrs[:price],
+    low_stock_threshold:  attrs[:threshold],
+    description:          attrs[:description],
+    product_category:     cats[attrs[:category]]
+  )
+  InventoryLevel.create!(product: p, store: store, quantity: 0)
+  p
 end
+
+# Índice para referenciar productos fácilmente
+by_sku = products.index_by(&:sku)
 
 # ─── Compras demo ─────────────────────────────────────────────────────────────
 
@@ -214,14 +223,16 @@ Purchases::Creator.new(
   user: admin,
   params: {
     supplier_id: suppliers[0].id,
-    store_id: stores[0].id,
-    received_on: 10.days.ago.to_date,
+    received_on: 14.days.ago.to_date,
     items: [
-      { product_id: products[0].id, quantity: 50, unit_cost:  900 },
-      { product_id: products[1].id, quantity: 50, unit_cost:  600 },
-      { product_id: products[4].id, quantity: 72, unit_cost: 1_100 },
-      { product_id: products[5].id, quantity: 48, unit_cost:  400 },
-      { product_id: products[7].id, quantity: 48, unit_cost:  550 }
+      { product_id: by_sku["ARR-001"].id, quantity: 60,  unit_cost:    900 },
+      { product_id: by_sku["ACE-001"].id, quantity: 36,  unit_cost:  1_500 },
+      { product_id: by_sku["COC-001"].id, quantity: 72,  unit_cost:  1_100 },
+      { product_id: by_sku["AGU-001"].id, quantity: 96,  unit_cost:    400 },
+      { product_id: by_sku["PAP-001"].id, quantity: 60,  unit_cost:    550 },
+      { product_id: by_sku["CHO-001"].id, quantity: 48,  unit_cost:    850 },
+      { product_id: by_sku["MAR-001"].id, quantity: 30,  unit_cost:    500 },
+      { product_id: by_sku["PAN-001"].id, quantity: 30,  unit_cost:  1_000 }
     ]
   }
 ).call
@@ -230,13 +241,16 @@ Purchases::Creator.new(
   user: manager,
   params: {
     supplier_id: suppliers[1].id,
-    store_id: stores[0].id,
-    received_on: 6.days.ago.to_date,
+    received_on: 9.days.ago.to_date,
     items: [
-      { product_id: products[10].id, quantity: 60, unit_cost:  700 },
-      { product_id: products[11].id, quantity: 48, unit_cost:  350 },
-      { product_id: products[12].id, quantity: 20, unit_cost: 2_200 },
-      { product_id: products[13].id, quantity: 30, unit_cost:  750 }
+      { product_id: by_sku["LEC-001"].id, quantity: 72,  unit_cost:    700 },
+      { product_id: by_sku["HUE-001"].id, quantity: 30,  unit_cost:  2_200 },
+      { product_id: by_sku["JAM-001"].id, quantity: 36,  unit_cost:    750 },
+      { product_id: by_sku["MOR-001"].id, quantity: 36,  unit_cost:    500 },
+      { product_id: by_sku["TOM-001"].id, quantity: 30,  unit_cost:    700 },
+      { product_id: by_sku["LIM-001"].id, quantity: 24,  unit_cost:    500 },
+      { product_id: by_sku["HEL-001"].id, quantity: 20,  unit_cost:  2_000 },
+      { product_id: by_sku["SUP-001"].id, quantity: 24,  unit_cost:  1_800 }
     ]
   }
 ).call
@@ -245,13 +259,16 @@ Purchases::Creator.new(
   user: admin,
   params: {
     supplier_id: suppliers[2].id,
-    store_id: stores[1].id,
-    received_on: 4.days.ago.to_date,
+    received_on: 5.days.ago.to_date,
     items: [
-      { product_id: products[15].id, quantity: 24, unit_cost: 2_400 },
-      { product_id: products[16].id, quantity: 24, unit_cost:  900 },
-      { product_id: products[17].id, quantity: 36, unit_cost: 1_500 },
-      { product_id: products[18].id, quantity: 18, unit_cost: 2_500 }
+      { product_id: by_sku["DET-001"].id, quantity: 24,  unit_cost:  2_400 },
+      { product_id: by_sku["CLO-001"].id, quantity: 24,  unit_cost:    900 },
+      { product_id: by_sku["PAH-001"].id, quantity: 48,  unit_cost:  1_500 },
+      { product_id: by_sku["JAB-001"].id, quantity: 36,  unit_cost:    550 },
+      { product_id: by_sku["PIL-001"].id, quantity: 24,  unit_cost:  1_800 },
+      { product_id: by_sku["AMP-001"].id, quantity: 24,  unit_cost:  1_200 },
+      { product_id: by_sku["ENC-001"].id, quantity: 60,  unit_cost:    250 },
+      { product_id: by_sku["FOS-001"].id, quantity: 60,  unit_cost:    150 }
     ]
   }
 ).call
@@ -261,13 +278,12 @@ Purchases::Creator.new(
 Sales::Creator.new(
   user: clerk,
   params: {
-    store_id: stores[0].id,
-    sold_on: 3.days.ago.to_date,
-    customer_name: nil,
+    sold_on: 4.days.ago.to_date,
     items: [
-      { product_id: products[4].id,  quantity: 6,  unit_price: 1_890 },
-      { product_id: products[7].id,  quantity: 10, unit_price:   990 },
-      { product_id: products[0].id,  quantity: 8,  unit_price: 1_490 }
+      { product_id: by_sku["COC-001"].id, quantity: 12, unit_price: 1_890 },
+      { product_id: by_sku["PAP-001"].id, quantity: 10, unit_price:   990 },
+      { product_id: by_sku["ARR-001"].id, quantity:  6, unit_price: 1_490 },
+      { product_id: by_sku["LEC-001"].id, quantity:  8, unit_price: 1_190 }
     ]
   }
 ).call
@@ -275,13 +291,12 @@ Sales::Creator.new(
 Sales::Creator.new(
   user: clerk,
   params: {
-    store_id: stores[0].id,
     sold_on: 2.days.ago.to_date,
-    customer_name: nil,
+    customer_name: "Junta de Vecinos Grecia",
     items: [
-      { product_id: products[10].id, quantity: 12, unit_price: 1_190 },
-      { product_id: products[12].id, quantity: 4,  unit_price: 3_490 },
-      { product_id: products[17].id, quantity: 6,  unit_price: 2_490 }
+      { product_id: by_sku["DET-001"].id, quantity:  6, unit_price: 3_990 },
+      { product_id: by_sku["PAH-001"].id, quantity: 12, unit_price: 2_490 },
+      { product_id: by_sku["AGU-001"].id, quantity: 24, unit_price:   690 }
     ]
   }
 ).call
@@ -289,13 +304,12 @@ Sales::Creator.new(
 Sales::Creator.new(
   user: manager,
   params: {
-    store_id: stores[1].id,
     sold_on: 1.day.ago.to_date,
-    customer_name: nil,
     items: [
-      { product_id: products[5].id,  quantity: 10, unit_price:   690 },
-      { product_id: products[8].id,  quantity: 8,  unit_price: 1_590 },
-      { product_id: products[19].id, quantity: 2,  unit_price: 8_990 }
+      { product_id: by_sku["HUE-001"].id, quantity:  4, unit_price: 3_490 },
+      { product_id: by_sku["JAM-001"].id, quantity:  6, unit_price: 1_290 },
+      { product_id: by_sku["CHO-001"].id, quantity:  8, unit_price: 1_490 },
+      { product_id: by_sku["DOG-001"].id, quantity:  2, unit_price: 8_990 }
     ]
   }
 ).call
@@ -303,15 +317,15 @@ Sales::Creator.new(
 # ─── Ajustes de inventario demo ───────────────────────────────────────────────
 
 InventoryManager.adjust!(
-  product: products[10], store: stores[0], user: manager,
+  product: by_sku["LEC-001"], store: store, user: manager,
   quantity_change: -4, reason: "audit",
   note: "Unidades vencidas retiradas en conteo cíclico"
 )
 
 InventoryManager.adjust!(
-  product: products[12], store: stores[1], user: admin,
-  quantity_change: 12, reason: "restock",
-  note: "Reposición urgente fin de semana"
+  product: by_sku["HEL-001"], store: store, user: admin,
+  quantity_change: 6, reason: "restock",
+  note: "Reposición urgente de congelados"
 )
 
 puts "Carga demo completada:"
@@ -320,7 +334,7 @@ puts "  Usuarios:    #{User.count}"
 puts "  Tiendas:     #{Store.count}"
 puts "  Proveedores: #{Supplier.count}"
 puts "  Categorias:  #{ProductCategory.count}"
-puts "  Productos:   #{Product.count}"
+puts "  Productos:   #{Product.count} (#{Product.count / ProductCategory.count.to_f} por categoría)"
 puts "  Permisos:    #{Permission.count}"
 puts "  Compras:     #{Purchase.count}"
 puts "  Ventas:      #{Sale.count}"
