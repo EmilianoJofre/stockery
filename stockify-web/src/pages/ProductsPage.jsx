@@ -14,6 +14,7 @@ const EMPTY_FORM = {
   price: "",
   low_stock_threshold: 10,
   active: true,
+  product_category_id: "",
 };
 
 export default function ProductsPage() {
@@ -22,8 +23,10 @@ export default function ProductsPage() {
   const canDelete = can(user, "products.delete");
 
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -35,7 +38,17 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
-  useEffect(() => { loadProducts(); }, [deferredSearch, lowStockOnly]);
+  useEffect(() => { loadCategories(); }, []);
+  useEffect(() => { loadProducts(); }, [deferredSearch, lowStockOnly, categoryFilter]);
+
+  async function loadCategories() {
+    try {
+      const response = await apiRequest("/api/v1/product_categories");
+      setCategories(response.product_categories);
+    } catch {
+      // non-critical, fail silently
+    }
+  }
 
   async function loadProducts() {
     setLoading(true);
@@ -44,6 +57,7 @@ export default function ProductsPage() {
       const query = new URLSearchParams();
       if (deferredSearch) query.set("q", deferredSearch);
       if (lowStockOnly) query.set("low_stock", "true");
+      if (categoryFilter) query.set("category_id", categoryFilter);
       const response = await apiRequest(`/api/v1/products${query.toString() ? `?${query}` : ""}`);
       setProducts(response.products);
     } catch (err) {
@@ -75,6 +89,7 @@ export default function ProductsPage() {
       price: product.price,
       low_stock_threshold: product.low_stock_threshold,
       active: product.active,
+      product_category_id: product.product_category_id ?? "",
     });
     setIsDirty(false);
     setFormError("");
@@ -99,7 +114,12 @@ export default function ProductsPage() {
         {
           method: editingProduct ? "PUT" : "POST",
           body: {
-            product: { ...form, price: Number(form.price), low_stock_threshold: Number(form.low_stock_threshold) },
+            product: {
+              ...form,
+              price: Number(form.price),
+              low_stock_threshold: Number(form.low_stock_threshold),
+              product_category_id: form.product_category_id || null,
+            },
           },
         }
       );
@@ -137,6 +157,18 @@ export default function ProductsPage() {
               placeholder="Buscar por nombre o SKU"
               value={search}
             />
+            {categories.length > 0 && (
+              <select
+                className="input-field w-[180px]"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="">Todas las categorías</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            )}
             <button
               className={`btn-ghost ${lowStockOnly ? "border-accent bg-accent/5 text-accent" : ""}`}
               onClick={() => setLowStockOnly((v) => !v)}
@@ -162,6 +194,7 @@ export default function ProductsPage() {
               <thead className="text-xs uppercase tracking-[0.22em] text-muted">
                 <tr>
                   <th className="pb-4">Producto</th>
+                  <th className="pb-4">Categoría</th>
                   <th className="pb-4">Precio</th>
                   <th className="pb-4">Inventario</th>
                   <th className="pb-4">Umbral</th>
@@ -184,6 +217,13 @@ export default function ProductsPage() {
                           </span>
                         ))}
                       </div>
+                    </td>
+                    <td className="py-4 align-top">
+                      {product.product_category ? (
+                        <span className="chip">{product.product_category.name}</span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
                     </td>
                     <td className="py-4 align-top text-muted">{formatCurrency(product.price)}</td>
                     <td className="py-4 align-top">
@@ -243,6 +283,20 @@ export default function ProductsPage() {
           <div>
             <label className="mb-2 block text-sm font-medium text-ink">SKU</label>
             <input className="input-field" required value={form.sku} onChange={(e) => patch("sku", e.target.value)} />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Categoría</label>
+            <select
+              className="input-field"
+              value={form.product_category_id}
+              onChange={(e) => patch("product_category_id", e.target.value)}
+            >
+              <option value="">Sin categoría</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

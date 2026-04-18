@@ -1,5 +1,6 @@
 class Product < ApplicationRecord
   belongs_to :company
+  belongs_to :product_category, optional: true
 
   has_many :inventory_levels
   has_many :inventory_adjustments

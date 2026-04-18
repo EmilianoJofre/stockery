@@ -3,6 +3,7 @@ class Company < ApplicationRecord
   has_many :stores, dependent: :destroy
   has_many :suppliers, dependent: :destroy
   has_many :products, dependent: :destroy
+  has_many :product_categories, dependent: :destroy
 
   validates :name, :slug, presence: true
   validates :slug, uniqueness: true

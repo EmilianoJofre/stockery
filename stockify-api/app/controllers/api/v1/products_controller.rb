@@ -7,8 +7,12 @@ module Api
       end
 
       def index
-        products = current_company.products.includes(inventory_levels: :store).order(created_at: :desc)
+        products = current_company.products
+          .includes(:product_category, inventory_levels: :store)
+          .order(created_at: :desc)
+
         products = products.where(active: ActiveModel::Type::Boolean.new.cast(params[:active])) if params.key?(:active)
+        products = products.where(product_category_id: params[:category_id]) if params[:category_id].present?
 
         if params[:q].present?
           query = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
@@ -56,11 +60,11 @@ module Api
       end
 
       def set_product
-        @product = current_company.products.includes(inventory_levels: :store).find(params[:id])
+        @product = current_company.products.includes(:product_category, inventory_levels: :store).find(params[:id])
       end
 
       def product_params
-        params.require(:product).permit(:name, :sku, :description, :price, :low_stock_threshold, :active)
+        params.require(:product).permit(:name, :sku, :description, :price, :low_stock_threshold, :active, :product_category_id)
       end
     end
   end

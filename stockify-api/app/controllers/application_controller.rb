@@ -86,6 +86,15 @@ class ApplicationController < ActionController::API
     }
   end
 
+  def serialize_product_category(category)
+    {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      active: category.active
+    }
+  end
+
   def serialize_product(product)
     {
       id: product.id,
@@ -95,6 +104,8 @@ class ApplicationController < ActionController::API
       price: product.price.to_f.round(2),
       low_stock_threshold: product.low_stock_threshold,
       active: product.active,
+      product_category_id: product.product_category_id,
+      product_category: product.product_category ? serialize_product_category(product.product_category) : nil,
       inventory_total: product.inventory_total,
       low_stock: product.low_stock?,
       store_quantities: product.inventory_levels.map do |level|
