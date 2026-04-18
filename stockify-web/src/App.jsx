@@ -1,6 +1,8 @@
+import clsx from "clsx";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import HeaderBar from "./components/HeaderBar";
+import BrandMark from "./components/BrandMark";
 import Sidebar from "./components/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
 import InventoryPage from "./pages/InventoryPage";
@@ -52,16 +54,55 @@ const PAGE_META = {
 
 function Shell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+
+    return window.localStorage.getItem("stockery.sidebar-open") !== "false";
+  });
   const { user, logout } = useAuth();
 
   const pageMeta = useMemo(() => PAGE_META, []);
 
+  function updateSidebarOpen(next) {
+    setSidebarOpen((current) => {
+      const resolved = typeof next === "function" ? next(current) : next;
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("stockery.sidebar-open", String(resolved));
+      }
+
+      return resolved;
+    });
+  }
+
+  function handleMenuToggle() {
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+      updateSidebarOpen((current) => !current);
+      return;
+    }
+
+    setDrawerOpen(true);
+  }
+
   return (
     <div className="min-h-screen bg-transparent">
-      <Sidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} user={user} />
+      <Sidebar
+        desktopOpen={sidebarOpen}
+        mobileOpen={drawerOpen}
+        onDesktopClose={() => updateSidebarOpen(false)}
+        onMobileClose={() => setDrawerOpen(false)}
+        user={user}
+      />
 
-      <div className="lg:pl-[18rem]">
-        <HeaderBar pageMeta={pageMeta} onMenu={() => setDrawerOpen(true)} onLogout={logout} user={user} />
+      <div
+        className={clsx(
+          "transition-[padding] duration-300",
+          sidebarOpen ? "lg:pl-[16rem]" : "lg:pl-0"
+        )}
+      >
+        <HeaderBar pageMeta={pageMeta} onMenu={handleMenuToggle} onLogout={logout} sidebarOpen={sidebarOpen} user={user} />
         <main className="mx-auto max-w-[1440px] px-4 pb-10 pt-6 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/dashboard" element={<DashboardPage />} />
@@ -86,7 +127,9 @@ function AppRoutes() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cloud">
         <div className="surface-card flex w-full max-w-md items-center gap-4 p-6">
-          <div className="h-12 w-12 animate-pulse rounded-2xl bg-brand/25" />
+          <div className="shrink-0">
+            <BrandMark compact />
+          </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Stockery</p>
             <p className="text-lg font-medium text-ink">Inicializando centro de control...</p>

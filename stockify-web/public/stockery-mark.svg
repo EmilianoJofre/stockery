@@ -1,0 +1,45 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="stockery-top-left" x1="20" y1="18" x2="93" y2="90" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#27E0B2" />
+      <stop offset="1" stop-color="#18BFC3" />
+    </linearGradient>
+    <linearGradient id="stockery-top-right" x1="78" y1="24" x2="139" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#21C9C1" />
+      <stop offset="1" stop-color="#237BB4" />
+    </linearGradient>
+    <linearGradient id="stockery-core" x1="48" y1="62" x2="103" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#238FB9" />
+      <stop offset="1" stop-color="#1A78B5" />
+    </linearGradient>
+    <linearGradient id="stockery-bottom-left" x1="22" y1="88" x2="82" y2="148" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#20D4B5" />
+      <stop offset="1" stop-color="#16B5BD" />
+    </linearGradient>
+    <linearGradient id="stockery-bottom-right" x1="74" y1="76" x2="143" y2="149" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1EBEC4" />
+      <stop offset="1" stop-color="#24D9B2" />
+    </linearGradient>
+  </defs>
+
+  <path
+    d="M80 12H45L20 37V74L44 88L55 56L80 37V12Z"
+    fill="url(#stockery-top-left)"
+  />
+  <path
+    d="M80 12H115L140 37V64H116L80 37V12Z"
+    fill="url(#stockery-top-right)"
+  />
+  <path
+    d="M58 60L103 77L94 111L48 97L58 60Z"
+    fill="url(#stockery-core)"
+  />
+  <path
+    d="M20 88H47L80 123L57 148L20 111V88Z"
+    fill="url(#stockery-bottom-left)"
+  />
+  <path
+    d="M81 123L111 98L140 113V124L115 148H57L81 123Z"
+    fill="url(#stockery-bottom-right)"
+  />
+</svg>

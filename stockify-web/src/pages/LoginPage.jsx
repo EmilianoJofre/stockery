@@ -1,24 +1,40 @@
+import { HiCircleStack, HiTruck, HiUserGroup } from "react-icons/hi2";
 import { useState } from "react";
 import BrandMark from "../components/BrandMark";
 import { useAuth } from "../context/AuthContext";
+
+const LOGIN_HIGHLIGHTS = [
+  {
+    icon: HiCircleStack,
+    copy: "Stock disponible por tienda y alertas de reposicion.",
+  },
+  {
+    icon: HiTruck,
+    copy: "Registro de compras y ventas con actualizacion inmediata.",
+  },
+  {
+    icon: HiUserGroup,
+    copy: "Acceso por rol para administracion, supervision y operacion.",
+  },
+];
 
 const DEMO_ACCOUNTS = [
   {
     role: "admin",
     label: "Administrador",
-    description: "Acceso completo a productos, compras, ventas y reportes.",
+    description: "Administra catalogo, inventario, compras, ventas, usuarios y reportes.",
     email: "admin@demo.stockery.app",
   },
   {
     role: "manager",
     label: "Gerente",
-    description: "Control comercial e inventario con acceso a reportes operativos.",
+    description: "Supervisa stock, ventas, compras y reportes para seguimiento operativo.",
     email: "manager@demo.stockery.app",
   },
   {
     role: "clerk",
     label: "Operador",
-    description: "Ejecucion de ventas y visibilidad de inventario con permisos acotados.",
+    description: "Registra ventas y consulta existencias con permisos acotados para la operacion diaria.",
     email: "clerk@demo.stockery.app",
   },
 ];
@@ -26,8 +42,8 @@ const DEMO_ACCOUNTS = [
 export default function LoginPage() {
   const { login, loginWithDemo } = useAuth();
   const [form, setForm] = useState({
-    email: "admin@demo.stockery.app",
-    password: "Stockify123!",
+    email: "",
+    password: "",
   });
   const [demoAccountsOpen, setDemoAccountsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -74,25 +90,23 @@ export default function LoginPage() {
           <BrandMark />
 
           <div className="mt-16 max-w-xl">
-            <p className="chip">SaaS listo para inversion</p>
+            <p className="chip">Operacion retail con trazabilidad</p>
             <h1 className="mt-8 max-w-lg font-semibold tracking-[-0.08em] text-ink">
-              Control de inventario estructurado para operaciones retail modernas.
+              Administra catalogo, inventario, compras y ventas desde un solo lugar.
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-muted">
-              Stockery le da a tu equipo una capa premium de control sobre productos, compras,
-              inventario en tiempo real y desempeno comercial, con acceso por roles y entrada demo instantanea.
+            <p className="mt-6 max-w-xl text-base leading-7 text-muted">
+              Stockery centraliza la operacion diaria de tiendas y equipos de abastecimiento:
+              stock por sucursal, recepciones, ventas, ajustes y reportes listos para seguimiento.
             </p>
           </div>
 
-          <div className="mt-12 grid gap-4 sm:grid-cols-3">
-            {[
-              ["Inteligencia de stock bajo", "Detecta riesgo de inventario antes de que afecte las ventas."],
-              ["De compra a gondola", "Recibe mercaderia y actualiza inventario en un solo flujo."],
-              ["Reportes listos para CSV", "Exporta snapshots operativos para finanzas y liderazgo."],
-            ].map(([title, copy]) => (
-              <div key={title} className="surface-card p-5">
-                <p className="text-sm font-semibold text-ink">{title}</p>
-                <p className="mt-3 text-sm leading-6 text-muted">{copy}</p>
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {LOGIN_HIGHLIGHTS.map((item) => (
+              <div key={item.copy} className="surface-card p-5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand/18 text-ink">
+                  <item.icon className="text-xl" />
+                </div>
+                <p className="mt-4 text-sm font-medium leading-6 text-ink">{item.copy}</p>
               </div>
             ))}
           </div>
@@ -101,10 +115,10 @@ export default function LoginPage() {
 
       <div className="flex w-full items-center justify-center border-t border-white/70 bg-white/70 px-6 py-10 backdrop-blur lg:w-[540px] lg:border-l lg:border-t-0">
         <div className="surface-card w-full max-w-md p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">Acceso seguro</p>
-          <h2 className="mt-4 font-semibold tracking-[-0.05em]">Ingresa a Stockery</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">Acceso a la plataforma</p>
+          <h2 className="mt-4 font-semibold tracking-[-0.05em]">Inicia sesion en Stockery</h2>
           <p className="mt-4 text-sm leading-6 text-muted">
-            Usa tu correo y contrasena o entra directo con un perfil demo preparado.
+            Ingresa con tu correo para trabajar sobre productos, inventario, compras, ventas y reportes desde un mismo panel.
           </p>
 
           <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
@@ -115,7 +129,9 @@ export default function LoginPage() {
               <input
                 id="email"
                 className="input-field"
+                autoComplete="email"
                 onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                placeholder="correo@empresa.cl"
                 type="email"
                 value={form.email}
               />
@@ -128,7 +144,9 @@ export default function LoginPage() {
               <input
                 id="password"
                 className="input-field"
+                autoComplete="current-password"
                 onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                placeholder="Tu contrasena"
                 type="password"
                 value={form.password}
               />
@@ -141,9 +159,16 @@ export default function LoginPage() {
             ) : null}
 
             <button className="btn-primary w-full" disabled={loading} type="submit">
-              {loading ? "Ingresando..." : "Continuar"}
+              {loading ? "Iniciando sesion..." : "Iniciar sesion"}
             </button>
           </form>
+
+          <div className="mt-6 rounded-2xl border border-line bg-cloud/60 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Acceso demo</p>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Si quieres recorrer el producto, abre las cuentas demo por rol y entra con un click, sin completar credenciales manualmente.
+            </p>
+          </div>
 
           <div className="mt-8">
             <button
@@ -154,11 +179,11 @@ export default function LoginPage() {
               type="button"
             >
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Ingreso demo</p>
-                <p className="mt-2 text-sm font-semibold text-ink">Ver cuentas demo</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Cuentas demo</p>
+                <p className="mt-2 text-sm font-semibold text-ink">Ver accesos por rol</p>
               </div>
               <span className="text-sm font-medium text-muted">
-                {demoAccountsOpen ? "Ocultar" : "Desplegar"}
+                {demoAccountsOpen ? "Ocultar" : "Mostrar"}
               </span>
             </button>
 
