@@ -78,11 +78,6 @@ function Shell() {
   }
 
   function handleMenuToggle() {
-    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-      updateSidebarOpen((current) => !current);
-      return;
-    }
-
     setDrawerOpen(true);
   }
 
@@ -91,7 +86,7 @@ function Shell() {
       <Sidebar
         desktopOpen={sidebarOpen}
         mobileOpen={drawerOpen}
-        onDesktopClose={() => updateSidebarOpen(false)}
+        onDesktopToggle={() => updateSidebarOpen((current) => !current)}
         onMobileClose={() => setDrawerOpen(false)}
         user={user}
       />
@@ -99,10 +94,10 @@ function Shell() {
       <div
         className={clsx(
           "transition-[padding] duration-300",
-          sidebarOpen ? "lg:pl-[16rem]" : "lg:pl-0"
+          sidebarOpen ? "lg:pl-[16rem]" : "lg:pl-[5.5rem]"
         )}
       >
-        <HeaderBar pageMeta={pageMeta} onMenu={handleMenuToggle} onLogout={logout} sidebarOpen={sidebarOpen} user={user} />
+        <HeaderBar pageMeta={pageMeta} onMenu={handleMenuToggle} onLogout={logout} user={user} />
         <main className="mx-auto max-w-[1440px] px-4 pb-10 pt-6 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/dashboard" element={<DashboardPage />} />

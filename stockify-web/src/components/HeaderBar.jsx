@@ -8,7 +8,7 @@ const FALLBACK_META = {
   description: "Monitorea inventario, ventas y proveedores desde un solo espacio.",
 };
 
-export default function HeaderBar({ pageMeta, onMenu, onLogout, sidebarOpen, user }) {
+export default function HeaderBar({ pageMeta, onMenu, onLogout, user }) {
   const location = useLocation();
   const key = location.pathname.split("/")[1] || "dashboard";
   const current = pageMeta[key] || FALLBACK_META;
@@ -17,9 +17,13 @@ export default function HeaderBar({ pageMeta, onMenu, onLogout, sidebarOpen, use
     <header className="sticky top-0 z-20 border-b border-white/70 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
-          <button className="btn-ghost h-10 gap-2 px-3" onClick={onMenu} type="button">
+          <button
+            aria-label="Abrir menu"
+            className="btn-ghost h-10 w-10 px-0 lg:hidden"
+            onClick={onMenu}
+            type="button"
+          >
             <HiBars3 className="text-lg" />
-            <span className="hidden lg:inline">{sidebarOpen ? "Ocultar menu" : "Mostrar menu"}</span>
           </button>
 
           <div className="min-w-0">

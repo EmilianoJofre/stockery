@@ -28,82 +28,133 @@ const ADMIN_MODULES = [
   { to: "/users", label: "Usuarios", icon: HiUserGroup, permission: "users.view" },
 ];
 
-function SidebarLink({ to, label, icon: Icon, onNavigate }) {
+function getUserInitials(user) {
+  const tokens = user?.name?.trim().split(/\s+/).filter(Boolean) || [];
+
+  if (tokens.length === 0) {
+    return "ST";
+  }
+
+  return tokens
+    .slice(0, 2)
+    .map((token) => token[0]?.toUpperCase())
+    .join("");
+}
+
+function SidebarLink({ to, label, icon: Icon, onNavigate, collapsed = false }) {
   return (
     <NavLink
-      className={({ isActive }) => clsx("sidebar-link", isActive && "sidebar-link-active")}
+      aria-label={label}
+      className={({ isActive }) =>
+        clsx(
+          "sidebar-link",
+          collapsed && "justify-center gap-0 px-2",
+          isActive && "sidebar-link-active"
+        )
+      }
       onClick={onNavigate}
+      title={collapsed ? label : undefined}
       to={to}
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70">
+      <span className={clsx("flex h-9 w-9 items-center justify-center rounded-xl bg-white/70", collapsed && "h-10 w-10")}>
         <Icon className="text-lg" />
       </span>
-      <span>{label}</span>
+      {!collapsed ? <span>{label}</span> : null}
     </NavLink>
   );
 }
 
-function SidebarContent({ onClose, onNavigate, user }) {
+function SidebarContent({ desktopOpen = true, isDesktop = false, onClose, onDesktopToggle, onNavigate, user }) {
   const adminModules = ADMIN_MODULES.filter((m) => can(user, m.permission));
+  const collapsed = isDesktop && !desktopOpen;
+  const userSummary = [user?.name, user?.email].filter(Boolean).join(" | ");
 
   return (
-    <div className="flex h-full flex-col rounded-none bg-white/95 px-4 py-5 shadow-soft backdrop-blur lg:rounded-r-[24px]">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <BrandMark />
-        <button className="btn-ghost h-10 px-3" onClick={onClose} type="button">
-          <HiXMark className="text-base" />
-        </button>
+    <div
+      className={clsx(
+        "relative flex h-full flex-col rounded-none bg-white/95 py-5 shadow-soft backdrop-blur lg:rounded-r-[24px]",
+        collapsed ? "px-3" : "px-4"
+      )}
+    >
+      <div className={clsx("mb-6 flex items-center", collapsed ? "justify-center" : "justify-between gap-3")}>
+        <BrandMark compact={collapsed} />
+
+        {!isDesktop ? (
+          <button aria-label="Cerrar menu" className="btn-ghost h-10 w-10 px-0" onClick={onClose} type="button">
+            <HiXMark className="text-base" />
+          </button>
+        ) : null}
       </div>
 
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Modulos</p>
-        <HiBars3BottomLeft className="text-muted" />
+      <div className={clsx("mb-3 flex items-center", collapsed ? "justify-center" : "justify-between")}>
+        {!collapsed ? <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Modulos</p> : null}
+        {isDesktop ? (
+          <button
+            aria-label={collapsed ? "Expandir menu" : "Contraer menu"}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted transition hover:bg-cloud hover:text-ink"
+            onClick={onDesktopToggle}
+            title={collapsed ? "Expandir menu" : "Contraer menu"}
+            type="button"
+          >
+            <HiBars3BottomLeft className="text-base" />
+          </button>
+        ) : (
+          <HiBars3BottomLeft className="text-muted" />
+        )}
       </div>
 
       <nav className="space-y-2">
         {CORE_MODULES.map((m) => (
-          <SidebarLink key={m.to} to={m.to} label={m.label} icon={m.icon} onNavigate={onNavigate} />
+          <SidebarLink collapsed={collapsed} key={m.to} to={m.to} label={m.label} icon={m.icon} onNavigate={onNavigate} />
         ))}
       </nav>
 
       {adminModules.length > 0 && (
         <>
-          <div className="mb-3 mt-6 flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Administracion</p>
+          <div className={clsx("mb-3 mt-6 flex items-center", collapsed ? "justify-center" : "justify-between")}>
+            {!collapsed ? <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Administracion</p> : null}
           </div>
           <nav className="space-y-2">
             {adminModules.map((m) => (
-              <SidebarLink key={m.to} to={m.to} label={m.label} icon={m.icon} onNavigate={onNavigate} />
+              <SidebarLink collapsed={collapsed} key={m.to} to={m.to} label={m.label} icon={m.icon} onNavigate={onNavigate} />
             ))}
           </nav>
         </>
       )}
 
       <div className="mt-auto space-y-4">
-        <div className="surface-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Sesion</p>
-          <p className="mt-3 text-base font-semibold text-ink">{user?.name}</p>
-          <p className="text-[13px] text-muted">{user?.email}</p>
-          <p className="mt-1 text-xs text-muted">{user?.company?.name}</p>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="chip">{translateRole(user?.role)}</span>
+        {collapsed ? (
+          <div className="surface-card flex items-center justify-center p-3" title={userSummary}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand/10 text-sm font-semibold text-ink">
+              {getUserInitials(user)}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="surface-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Sesion</p>
+            <p className="mt-3 text-base font-semibold text-ink">{user?.name}</p>
+            <p className="text-[13px] text-muted">{user?.email}</p>
+            <p className="mt-1 text-xs text-muted">{user?.company?.name}</p>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="chip">{translateRole(user?.role)}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export default function Sidebar({ desktopOpen, mobileOpen, onDesktopClose, onMobileClose, user }) {
+export default function Sidebar({ desktopOpen, mobileOpen, onDesktopToggle, onMobileClose, user }) {
   return (
     <>
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-30 hidden w-[16rem] transition-transform duration-300 lg:block",
-          desktopOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
+          "fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-300 lg:block",
+          desktopOpen ? "w-[16rem]" : "w-[5.5rem]"
         )}
       >
-        <SidebarContent onClose={onDesktopClose} user={user} />
+        <SidebarContent desktopOpen={desktopOpen} isDesktop onDesktopToggle={onDesktopToggle} user={user} />
       </aside>
 
       <div

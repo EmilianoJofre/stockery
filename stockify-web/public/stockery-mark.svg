@@ -1,24 +1,24 @@
 <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="stockery-top-left" x1="20" y1="18" x2="93" y2="90" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#27E0B2" />
-      <stop offset="1" stop-color="#18BFC3" />
+    <linearGradient id="stockery-top-left" x1="18" y1="16" x2="94" y2="92" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2AD8B0" />
+      <stop offset="1" stop-color="#16C2AC" />
     </linearGradient>
-    <linearGradient id="stockery-top-right" x1="78" y1="24" x2="139" y2="80" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#21C9C1" />
-      <stop offset="1" stop-color="#237BB4" />
+    <linearGradient id="stockery-top-right" x1="76" y1="22" x2="140" y2="82" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1498BC" />
+      <stop offset="1" stop-color="#0E728E" />
     </linearGradient>
-    <linearGradient id="stockery-core" x1="48" y1="62" x2="103" y2="110" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#238FB9" />
-      <stop offset="1" stop-color="#1A78B5" />
+    <linearGradient id="stockery-core" x1="46" y1="60" x2="104" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1395B7" />
+      <stop offset="1" stop-color="#0B7899" />
     </linearGradient>
-    <linearGradient id="stockery-bottom-left" x1="22" y1="88" x2="82" y2="148" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#20D4B5" />
-      <stop offset="1" stop-color="#16B5BD" />
+    <linearGradient id="stockery-bottom-left" x1="20" y1="88" x2="82" y2="148" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1AB883" />
+      <stop offset="1" stop-color="#129C81" />
     </linearGradient>
-    <linearGradient id="stockery-bottom-right" x1="74" y1="76" x2="143" y2="149" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#1EBEC4" />
-      <stop offset="1" stop-color="#24D9B2" />
+    <linearGradient id="stockery-bottom-right" x1="72" y1="76" x2="144" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#19BFAE" />
+      <stop offset="1" stop-color="#2CD8B1" />
     </linearGradient>
   </defs>
 
