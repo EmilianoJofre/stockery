@@ -91,6 +91,7 @@ class ApplicationController < ActionController::API
       id: category.id,
       name: category.name,
       slug: category.slug,
+      icon: category.icon,
       active: category.active
     }
   end

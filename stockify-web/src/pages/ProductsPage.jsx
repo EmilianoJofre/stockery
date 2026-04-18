@@ -1,11 +1,14 @@
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { HiChevronDown, HiXMark } from "react-icons/hi2";
+import CategoryBadge from "../components/CategoryBadge";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
-import { can } from "../lib/permissions";
 import { apiRequest } from "../lib/api";
+import { getIconComponent } from "../lib/categoryIcons";
 import { formatCurrency } from "../lib/format";
+import { can } from "../lib/permissions";
 
 const EMPTY_FORM = {
   name: "",
@@ -16,6 +19,117 @@ const EMPTY_FORM = {
   active: true,
   product_category_id: "",
 };
+
+// ─── Category filter dropdown ─────────────────────────────────────────────────
+
+function CategoryFilter({ categories, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const selected = categories.find((c) => String(c.id) === String(value));
+
+  function select(id) {
+    onChange(id);
+    setOpen(false);
+  }
+
+  if (categories.length === 0) return null;
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        className="input-field flex w-[200px] cursor-pointer items-center gap-2 text-left"
+        onClick={() => setOpen((v) => !v)}
+        type="button"
+      >
+        {selected ? (
+          <>
+            {(() => { const Icon = getIconComponent(selected.icon); return <Icon className="h-4 w-4 shrink-0 text-muted" />; })()}
+            <span className="flex-1 truncate text-ink">{selected.name}</span>
+            <HiXMark
+              className="h-4 w-4 shrink-0 text-muted hover:text-ink"
+              onClick={(e) => { e.stopPropagation(); select(""); }}
+            />
+          </>
+        ) : (
+          <>
+            <span className="flex-1 text-muted">Todas las categorías</span>
+            <HiChevronDown className="h-4 w-4 shrink-0 text-muted" />
+          </>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-20 mt-1 w-[220px] overflow-hidden rounded-2xl border border-line bg-surface shadow-lg">
+          <button
+            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-muted hover:bg-line/40"
+            onClick={() => select("")}
+            type="button"
+          >
+            <span className="h-4 w-4" />
+            Todas las categorías
+          </button>
+          <div className="h-px bg-line" />
+          {categories.map((c) => {
+            const Icon = getIconComponent(c.icon);
+            return (
+              <button
+                key={c.id}
+                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-line/40 ${String(value) === String(c.id) ? "bg-brand/5 font-medium text-brand" : "text-ink"}`}
+                onClick={() => select(String(c.id))}
+                type="button"
+              >
+                <Icon className="h-4 w-4 shrink-0 text-muted" />
+                {c.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Category picker (modal) ──────────────────────────────────────────────────
+
+function CategoryPicker({ categories, value, onChange }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-ink">Categoría</label>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+        {categories.map((c) => {
+          const Icon = getIconComponent(c.icon);
+          const isSelected = String(value) === String(c.id);
+          return (
+            <button
+              key={c.id}
+              className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center text-xs transition-colors ${
+                isSelected
+                  ? "border-brand bg-brand/5 text-brand"
+                  : "border-line bg-surface text-muted hover:border-brand/40 hover:text-ink"
+              }`}
+              onClick={() => onChange(isSelected ? "" : String(c.id))}
+              type="button"
+            >
+              <Icon className={`h-5 w-5 shrink-0 ${isSelected ? "text-brand" : "text-muted"}`} />
+              <span className="leading-tight">{c.name}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
   const { user } = useAuth();
@@ -46,7 +160,7 @@ export default function ProductsPage() {
       const response = await apiRequest("/api/v1/product_categories");
       setCategories(response.product_categories);
     } catch {
-      // non-critical, fail silently
+      // non-critical
     }
   }
 
@@ -164,18 +278,11 @@ export default function ProductsPage() {
             placeholder="Buscar por nombre o SKU"
             value={search}
           />
-          {categories.length > 0 && (
-            <select
-              className="input-field w-[180px] shrink-0"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="">Todas las categorías</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          )}
+          <CategoryFilter
+            categories={categories}
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+          />
           <button
             className={`btn-ghost shrink-0 ${lowStockOnly ? "border-accent bg-accent/5 text-accent" : ""}`}
             onClick={() => setLowStockOnly((v) => !v)}
@@ -184,6 +291,7 @@ export default function ProductsPage() {
             {lowStockOnly ? "Mostrando stock bajo" : "Solo stock bajo"}
           </button>
         </div>
+
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
         {loading ? (
@@ -219,11 +327,7 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="py-4 align-top">
-                      {product.product_category ? (
-                        <span className="chip">{product.product_category.name}</span>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
+                      <CategoryBadge category={product.product_category} />
                     </td>
                     <td className="py-4 align-top text-muted">{formatCurrency(product.price)}</td>
                     <td className="py-4 align-top">
@@ -268,7 +372,7 @@ export default function ProductsPage() {
         open={modalOpen}
         onClose={closeModal}
         title={editingProduct ? "Editar producto" : "Nuevo producto"}
-        size="lg"
+        size="xl"
       >
         <form className="space-y-4" onSubmit={handleSubmit}>
           {formError && (
@@ -285,19 +389,13 @@ export default function ProductsPage() {
             <input className="input-field" required value={form.sku} onChange={(e) => patch("sku", e.target.value)} />
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-ink">Categoría</label>
-            <select
-              className="input-field"
+          {categories.length > 0 && (
+            <CategoryPicker
+              categories={categories}
               value={form.product_category_id}
-              onChange={(e) => patch("product_category_id", e.target.value)}
-            >
-              <option value="">Sin categoría</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
+              onChange={(v) => patch("product_category_id", v)}
+            />
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
