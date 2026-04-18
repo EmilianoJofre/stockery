@@ -309,7 +309,7 @@ Sales::Creator.new(
       { product_id: by_sku["HUE-001"].id, quantity:  4, unit_price: 3_490 },
       { product_id: by_sku["JAM-001"].id, quantity:  6, unit_price: 1_290 },
       { product_id: by_sku["CHO-001"].id, quantity:  8, unit_price: 1_490 },
-      { product_id: by_sku["DOG-001"].id, quantity:  2, unit_price: 8_990 }
+      { product_id: by_sku["HEL-001"].id, quantity:  3, unit_price: 3_490 }
     ]
   }
 ).call
