@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import EmptyState from "../components/EmptyState";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
+import { can } from "../lib/permissions";
 import { apiRequest } from "../lib/api";
 import { formatDate } from "../lib/format";
 import { translateAdjustmentReason } from "../lib/translations";
@@ -16,7 +17,7 @@ const EMPTY_ADJUSTMENT = {
 
 export default function InventoryPage() {
   const { user } = useAuth();
-  const canManage = user?.capabilities?.can_manage_inventory;
+  const canManage = can(user, "inventory.adjust");
   const [inventory, setInventory] = useState([]);
   const [adjustments, setAdjustments] = useState([]);
   const [stores, setStores] = useState([]);

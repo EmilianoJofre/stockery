@@ -3,7 +3,9 @@ import AccessNotice from "../components/AccessNotice";
 import EmptyState from "../components/EmptyState";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
+import { can } from "../lib/permissions";
 import { apiRequest, buildApiUrl } from "../lib/api";
+import { formatCurrency } from "../lib/format";
 import { translateReportHeading } from "../lib/translations";
 
 const REPORTS = [
@@ -24,9 +26,11 @@ const REPORTS = [
   },
 ];
 
+const MONETARY_KEYS = new Set(["ingresos", "revenue", "total", "precio", "costo"]);
+
 export default function ReportsPage() {
   const { user } = useAuth();
-  const canView = user?.capabilities?.can_view_reports;
+  const canView = can(user, "reports.view");
   const [activeKey, setActiveKey] = useState(REPORTS[0].key);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -110,9 +114,9 @@ export default function ReportsPage() {
               <tbody className="divide-y divide-line">
                 {rows.map((row, index) => (
                   <tr key={`${activeKey}-${index}`}>
-                    {Object.values(row).map((value, valueIndex) => (
+                    {Object.entries(row).map(([key, value], valueIndex) => (
                       <td key={`${activeKey}-${index}-${valueIndex}`} className="py-4 text-muted">
-                        {String(value)}
+                        {MONETARY_KEYS.has(key) ? formatCurrency(value) : String(value)}
                       </td>
                     ))}
                   </tr>

@@ -1,7 +1,7 @@
 export function formatCurrency(amount) {
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
-    currency: "USD",
+    currency: "CLP",
     maximumFractionDigits: 0,
   }).format(Number(amount || 0));
 }

@@ -3,6 +3,7 @@ import AccessNotice from "../components/AccessNotice";
 import EmptyState from "../components/EmptyState";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
+import { can } from "../lib/permissions";
 import { apiRequest } from "../lib/api";
 import { formatCurrency, formatDate } from "../lib/format";
 
@@ -26,7 +27,7 @@ const EMPTY_PURCHASE = {
 
 export default function PurchasesPage() {
   const { user } = useAuth();
-  const canManage = user?.capabilities?.can_manage_purchases;
+  const canManage = can(user, "purchases.create");
   const [suppliers, setSuppliers] = useState([]);
   const [stores, setStores] = useState([]);
   const [products, setProducts] = useState([]);
@@ -350,8 +351,8 @@ export default function PurchasesPage() {
                         className="input-field"
                         min="0"
                         onChange={(event) => updatePurchaseItem(index, "unit_cost", event.target.value)}
-                        placeholder="Costo unitario"
-                        step="0.01"
+                        placeholder="Costo $"
+                        step="1"
                         type="number"
                         value={item.unit_cost}
                       />

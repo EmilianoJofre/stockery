@@ -229,7 +229,7 @@ export default function ProductsPage() {
                   className="input-field"
                   min="0"
                   onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
-                  step="0.01"
+                  step="1"
                   type="number"
                   value={form.price}
                 />

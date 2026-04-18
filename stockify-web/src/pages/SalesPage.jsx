@@ -169,8 +169,8 @@ export default function SalesPage() {
                     className="input-field"
                     min="0"
                     onChange={(event) => updateSaleItem(index, "unit_price", event.target.value)}
-                    placeholder="Precio"
-                    step="0.01"
+                    placeholder="Precio $"
+                    step="1"
                     type="number"
                     value={item.unit_price}
                   />
