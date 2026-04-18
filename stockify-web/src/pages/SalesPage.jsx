@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import EmptyState from "../components/EmptyState";
+import Modal from "../components/Modal";
 import SectionCard from "../components/SectionCard";
+import { useAuth } from "../context/AuthContext";
+import { can } from "../lib/permissions";
 import { apiRequest } from "../lib/api";
 import { formatCurrency, formatDate } from "../lib/format";
 
-const EMPTY_SALE = {
+const EMPTY_FORM = {
   store_id: "",
   sold_on: new Date().toISOString().slice(0, 10),
   customer_name: "",
@@ -14,67 +17,88 @@ const EMPTY_SALE = {
 };
 
 export default function SalesPage() {
+  const { user } = useAuth();
+  const canCreate = can(user, "sales.create");
+
   const [stores, setStores] = useState([]);
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
-  const [form, setForm] = useState(EMPTY_SALE);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    loadPage();
-  }, []);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [isDirty, setIsDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  useEffect(() => { loadPage(); }, []);
 
   async function loadPage() {
     setLoading(true);
     setError("");
-
     try {
-      const [storeResponse, productResponse, salesResponse] = await Promise.all([
+      const [storesRes, productsRes, salesRes] = await Promise.all([
         apiRequest("/api/v1/stores"),
         apiRequest("/api/v1/products"),
         apiRequest("/api/v1/sales"),
       ]);
-
-      setStores(storeResponse.stores);
-      setProducts(productResponse.products);
-      setSales(salesResponse.sales);
-    } catch (requestError) {
-      setError(requestError.message);
+      setStores(storesRes.stores);
+      setProducts(productsRes.products);
+      setSales(salesRes.sales);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }
 
-  function updateSaleItem(index, field, value) {
-    setForm((current) => ({
-      ...current,
-      items: current.items.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, [field]: value } : item
-      ),
-    }));
+  const liveTotal = useMemo(
+    () => form.items.reduce((sum, item) => sum + (Number(item.unit_price) || 0) * (Number(item.quantity) || 0), 0),
+    [form.items]
+  );
+
+  function patchForm(field, value) {
+    setForm((f) => ({ ...f, [field]: value }));
+    setIsDirty(true);
   }
 
-  function addSaleItem() {
-    setForm((current) => ({
-      ...current,
-      items: [...current.items, { product_id: "", quantity: 1, unit_price: "" }],
+  function updateItem(index, field, value) {
+    setForm((f) => ({
+      ...f,
+      items: f.items.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     }));
+    setIsDirty(true);
   }
 
-  function removeSaleItem(index) {
-    setForm((current) => ({
-      ...current,
-      items: current.items.filter((_, itemIndex) => itemIndex !== index),
-    }));
+  function addItem() {
+    setForm((f) => ({ ...f, items: [...f.items, { product_id: "", quantity: 1, unit_price: "" }] }));
+    setIsDirty(true);
   }
 
-  async function saveSale(event) {
+  function removeItem(index) {
+    setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== index) }));
+    setIsDirty(true);
+  }
+
+  function openModal() {
+    setForm(EMPTY_FORM);
+    setIsDirty(false);
+    setFormError("");
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    if (isDirty && !window.confirm("¿Salir sin registrar la venta?")) return;
+    setModalOpen(false);
+    setIsDirty(false);
+    setFormError("");
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
     setSaving(true);
-    setError("");
-
+    setFormError("");
     try {
       await apiRequest("/api/v1/sales", {
         method: "POST",
@@ -89,125 +113,31 @@ export default function SalesPage() {
           },
         },
       });
-
-      setForm(EMPTY_SALE);
+      setModalOpen(false);
+      setIsDirty(false);
       await loadPage();
-    } catch (submitError) {
-      setError(submitError.message);
+    } catch (err) {
+      setFormError(err.message);
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_1.05fr]">
-      <SectionCard description="Captura ordenes salientes y descuenta inventario en la misma transaccion." title="Crear venta">
+    <>
+      <SectionCard
+        title="Historial de ventas"
+        description="Órdenes salientes e impacto en inventario."
+        action={
+          canCreate && (
+            <button className="btn-secondary" onClick={openModal} type="button">
+              Registrar venta
+            </button>
+          )
+        }
+      >
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
-        <form className="space-y-4" onSubmit={saveSale}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
-              <select
-                className="input-field"
-                onChange={(event) => setForm((current) => ({ ...current, store_id: event.target.value }))}
-                value={form.store_id}
-              >
-                <option value="">Selecciona una tienda</option>
-                {stores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-ink">Fecha de venta</label>
-              <input
-                className="input-field"
-                onChange={(event) => setForm((current) => ({ ...current, sold_on: event.target.value }))}
-                type="date"
-                value={form.sold_on}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-ink">Nombre del cliente</label>
-            <input
-              className="input-field"
-              onChange={(event) => setForm((current) => ({ ...current, customer_name: event.target.value }))}
-              placeholder="Opcional"
-              value={form.customer_name}
-            />
-          </div>
-
-          <div className="space-y-3">
-            {form.items.map((item, index) => (
-              <div key={`sale-item-${index}`} className="rounded-2xl border border-line bg-cloud/70 p-4">
-                <div className="grid gap-4 md:grid-cols-[1.6fr_0.7fr_0.8fr_auto]">
-                  <select
-                    className="input-field"
-                    onChange={(event) => updateSaleItem(index, "product_id", event.target.value)}
-                    value={item.product_id}
-                  >
-                    <option value="">Selecciona un producto</option>
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} ({product.sku})
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    className="input-field"
-                    min="1"
-                    onChange={(event) => updateSaleItem(index, "quantity", event.target.value)}
-                    placeholder="Cant."
-                    type="number"
-                    value={item.quantity}
-                  />
-                  <input
-                    className="input-field"
-                    min="0"
-                    onChange={(event) => updateSaleItem(index, "unit_price", event.target.value)}
-                    placeholder="Precio $"
-                    step="1"
-                    type="number"
-                    value={item.unit_price}
-                  />
-                  <button
-                    className="btn-ghost"
-                    disabled={form.items.length === 1}
-                    onClick={() => removeSaleItem(index)}
-                    type="button"
-                  >
-                    Quitar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <button className="btn-ghost" onClick={addSaleItem} type="button">
-              Agregar linea
-            </button>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-ink">Notas</label>
-            <textarea
-              className="text-area-field"
-              onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
-              value={form.notes}
-            />
-          </div>
-          <button className="btn-secondary w-full" disabled={saving} type="submit">
-            {saving ? "Guardando venta..." : "Registrar venta"}
-          </button>
-        </form>
-      </SectionCard>
-
-      <SectionCard description="Ordenes recientes y su impacto comercial." title="Historial de ventas">
         {loading ? (
           <p className="text-sm text-muted">Cargando ventas...</p>
         ) : sales.length ? (
@@ -236,9 +166,111 @@ export default function SalesPage() {
             </table>
           </div>
         ) : (
-          <EmptyState description="El historial se poblara a medida que registres ventas." title="Sin ventas registradas" />
+          <EmptyState
+            description="El historial se poblará a medida que registres ventas."
+            title="Sin ventas registradas"
+          />
         )}
       </SectionCard>
-    </div>
+
+      <Modal open={modalOpen} onClose={closeModal} title="Registrar venta" size="xl">
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          {formError && (
+            <div className="rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{formError}</div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
+              <select className="input-field" required value={form.store_id} onChange={(e) => patchForm("store_id", e.target.value)}>
+                <option value="">Selecciona una tienda</option>
+                {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-ink">Fecha de venta</label>
+              <input className="input-field" type="date" value={form.sold_on} onChange={(e) => patchForm("sold_on", e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Cliente</label>
+            <input
+              className="input-field"
+              placeholder="Opcional"
+              value={form.customer_name}
+              onChange={(e) => patchForm("customer_name", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <label className="text-sm font-medium text-ink">Líneas de venta</label>
+              <button className="btn-ghost h-9 px-4 text-sm" onClick={addItem} type="button">
+                + Agregar línea
+              </button>
+            </div>
+            <div className="space-y-2">
+              {form.items.map((item, index) => (
+                <div key={`sale-item-${index}`} className="grid gap-2 rounded-2xl border border-line bg-cloud/60 p-3 md:grid-cols-[1.6fr_0.6fr_0.8fr_auto]">
+                  <select
+                    className="input-field"
+                    value={item.product_id}
+                    onChange={(e) => updateItem(index, "product_id", e.target.value)}
+                  >
+                    <option value="">Producto</option>
+                    {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
+                  </select>
+                  <input
+                    className="input-field"
+                    min="1"
+                    placeholder="Cant."
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                  />
+                  <input
+                    className="input-field"
+                    min="0"
+                    placeholder="Precio $"
+                    step="1"
+                    type="number"
+                    value={item.unit_price}
+                    onChange={(e) => updateItem(index, "unit_price", e.target.value)}
+                  />
+                  <button
+                    className="btn-ghost h-12 px-3 text-sm disabled:opacity-40"
+                    disabled={form.items.length === 1}
+                    onClick={() => removeItem(index)}
+                    type="button"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {liveTotal > 0 && (
+            <div className="rounded-2xl border border-brand/30 bg-brand/5 px-4 py-3">
+              <p className="text-sm text-muted">Total estimado</p>
+              <p className="text-2xl font-semibold tracking-[-0.04em] text-ink">{formatCurrency(liveTotal)}</p>
+            </div>
+          )}
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Notas</label>
+            <textarea className="text-area-field" value={form.notes} onChange={(e) => patchForm("notes", e.target.value)} />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button className="btn-secondary flex-1" disabled={saving} type="submit">
+              {saving ? "Guardando venta..." : "Registrar venta"}
+            </button>
+            <button className="btn-ghost" onClick={closeModal} type="button">Cancelar</button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import EmptyState from "../components/EmptyState";
+import Modal from "../components/Modal";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
 import { can } from "../lib/permissions";
@@ -18,6 +19,7 @@ const EMPTY_ADJUSTMENT = {
 export default function InventoryPage() {
   const { user } = useAuth();
   const canManage = can(user, "inventory.adjust");
+
   const [inventory, setInventory] = useState([]);
   const [adjustments, setAdjustments] = useState([]);
   const [stores, setStores] = useState([]);
@@ -25,120 +27,134 @@ export default function InventoryPage() {
   const [search, setSearch] = useState("");
   const [storeId, setStoreId] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);
-  const [form, setForm] = useState(EMPTY_ADJUSTMENT);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const deferredSearch = useDeferredValue(search);
 
-  useEffect(() => {
-    loadLookups();
-  }, []);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_ADJUSTMENT);
+  const [isDirty, setIsDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
 
-  useEffect(() => {
-    loadInventory();
-  }, [deferredSearch, storeId, lowStockOnly]);
+  useEffect(() => { loadLookups(); }, []);
+  useEffect(() => { loadInventory(); }, [deferredSearch, storeId, lowStockOnly]);
 
   async function loadLookups() {
     try {
-      const [storesResponse, productsResponse] = await Promise.all([
+      const [storesRes, productsRes] = await Promise.all([
         apiRequest("/api/v1/stores"),
         apiRequest("/api/v1/products"),
       ]);
-
-      setStores(storesResponse.stores);
-      setProducts(productsResponse.products);
-    } catch (lookupError) {
-      setError(lookupError.message);
+      setStores(storesRes.stores);
+      setProducts(productsRes.products);
+    } catch (err) {
+      setError(err.message);
     }
   }
 
   async function loadInventory() {
     setLoading(true);
     setError("");
-
     try {
       const query = new URLSearchParams();
-      if (deferredSearch) {
-        query.set("q", deferredSearch);
-      }
-      if (storeId) {
-        query.set("store_id", storeId);
-      }
-      if (lowStockOnly) {
-        query.set("low_stock", "true");
-      }
-
+      if (deferredSearch) query.set("q", deferredSearch);
+      if (storeId) query.set("store_id", storeId);
+      if (lowStockOnly) query.set("low_stock", "true");
       const response = await apiRequest(`/api/v1/inventory${query.toString() ? `?${query}` : ""}`);
       setInventory(response.inventory);
       setAdjustments(response.adjustments);
-    } catch (requestError) {
-      setError(requestError.message);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }
 
-  const inventoryProductOptions = useMemo(
-    () => products.map((product) => ({ label: `${product.name} (${product.sku})`, value: product.id })),
+  const productOptions = useMemo(
+    () => products.map((p) => ({ label: `${p.name} (${p.sku})`, value: p.id })),
     [products]
   );
+
+  function patch(field, value) {
+    setForm((f) => ({ ...f, [field]: value }));
+    setIsDirty(true);
+  }
+
+  function openAdjust(item = null) {
+    setForm(
+      item
+        ? { ...EMPTY_ADJUSTMENT, product_id: item.product_id, store_id: item.store_id }
+        : EMPTY_ADJUSTMENT
+    );
+    setIsDirty(false);
+    setFormError("");
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    if (isDirty && !window.confirm("¿Salir sin guardar el ajuste?")) return;
+    setModalOpen(false);
+    setIsDirty(false);
+    setFormError("");
+  }
 
   async function handleAdjust(event) {
     event.preventDefault();
     setSaving(true);
-    setError("");
-
+    setFormError("");
     try {
       await apiRequest("/api/v1/inventory/adjust", {
         method: "POST",
-        body: {
-          adjustment: {
-            ...form,
-            quantity_change: Number(form.quantity_change),
-          },
-        },
+        body: { adjustment: { ...form, quantity_change: Number(form.quantity_change) } },
       });
-
-      setForm(EMPTY_ADJUSTMENT);
+      setModalOpen(false);
+      setIsDirty(false);
       await loadInventory();
-    } catch (submitError) {
-      setError(submitError.message);
+    } catch (err) {
+      setFormError(err.message);
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
+    <div className="space-y-6">
       <SectionCard
+        title="Niveles de inventario"
+        description="Stock por ubicación con alertas de umbral en tiempo real."
         action={
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <input
-              className="input-field w-[220px]"
-              onChange={(event) => setSearch(event.target.value)}
+              className="input-field w-[200px]"
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar inventario"
               value={search}
             />
-            <select className="input-field w-[180px]" onChange={(event) => setStoreId(event.target.value)} value={storeId}>
+            <select
+              className="input-field w-[170px]"
+              onChange={(e) => setStoreId(e.target.value)}
+              value={storeId}
+            >
               <option value="">Todas las tiendas</option>
               {stores.map((store) => (
-                <option key={store.id} value={store.id}>
-                  {store.name}
-                </option>
+                <option key={store.id} value={store.id}>{store.name}</option>
               ))}
             </select>
             <button
               className={`btn-ghost ${lowStockOnly ? "border-accent bg-accent/5 text-accent" : ""}`}
-              onClick={() => setLowStockOnly((current) => !current)}
+              onClick={() => setLowStockOnly((v) => !v)}
               type="button"
             >
-              {lowStockOnly ? "Modo stock bajo" : "Filtrar stock bajo"}
+              {lowStockOnly ? "Modo stock bajo" : "Stock bajo"}
             </button>
+            {canManage && (
+              <button className="btn-secondary" onClick={() => openAdjust()} type="button">
+                Ajustar stock
+              </button>
+            )}
           </div>
         }
-        description="Sigue cantidades por ubicacion y monitorea el riesgo frente a los umbrales."
-        title="Niveles de inventario"
       >
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
@@ -153,6 +169,7 @@ export default function InventoryPage() {
                   <th className="pb-4">Tienda</th>
                   <th className="pb-4">Cantidad</th>
                   <th className="pb-4">Umbral</th>
+                  {canManage && <th className="pb-4 text-right">Acción</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -166,134 +183,125 @@ export default function InventoryPage() {
                     <td className="py-4">
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold text-ink">{item.quantity}</span>
-                        {item.low_stock ? <span className="chip chip-alert">Alerta</span> : null}
+                        {item.low_stock && <span className="chip chip-alert">Alerta</span>}
                       </div>
                     </td>
                     <td className="py-4 text-muted">{item.threshold}</td>
+                    {canManage && (
+                      <td className="py-4 text-right">
+                        <button
+                          className="btn-ghost h-9 px-4 text-sm"
+                          onClick={() => openAdjust(item)}
+                          type="button"
+                        >
+                          Ajustar
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <EmptyState description="Las filas apareceran a medida que el inventario se distribuya por tienda." title="Sin filas de inventario" />
+          <EmptyState
+            description="Las filas aparecerán a medida que el inventario se distribuya por tienda."
+            title="Sin filas de inventario"
+          />
         )}
       </SectionCard>
 
-      <div className="space-y-6">
-        <SectionCard
-          description={
-            canManage
-              ? "Aumenta o disminuye stock y deja una trazabilidad del motivo."
-              : "Tu rol puede revisar inventario, pero no publicar ajustes."
-          }
-          title="Ajuste de stock"
-        >
-          {canManage ? (
-            <form className="space-y-4" onSubmit={handleAdjust}>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Producto</label>
-                <select
-                  className="input-field"
-                  onChange={(event) => setForm((current) => ({ ...current, product_id: event.target.value }))}
-                  value={form.product_id}
-                >
-                  <option value="">Selecciona un producto</option>
-                  {inventoryProductOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
-                <select
-                  className="input-field"
-                  onChange={(event) => setForm((current) => ({ ...current, store_id: event.target.value }))}
-                  value={form.store_id}
-                >
-                  <option value="">Selecciona una tienda</option>
-                  {stores.map((store) => (
-                    <option key={store.id} value={store.id}>
-                      {store.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Cambio de cantidad</label>
-                <input
-                  className="input-field"
-                  onChange={(event) => setForm((current) => ({ ...current, quantity_change: event.target.value }))}
-                  placeholder="Usa numeros negativos para descontar"
-                  type="number"
-                  value={form.quantity_change}
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Motivo</label>
-                <select
-                  className="input-field"
-                  onChange={(event) => setForm((current) => ({ ...current, reason: event.target.value }))}
-                  value={form.reason}
-                >
-                  <option value="audit">Auditoria</option>
-                  <option value="purchase">Compra</option>
-                  <option value="sale">Venta</option>
-                  <option value="display">Exhibicion</option>
-                  <option value="damage">Merma</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Nota</label>
-                <textarea
-                  className="text-area-field"
-                  onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
-                  value={form.note}
-                />
-              </div>
-              <button className="btn-secondary w-full" disabled={saving} type="submit">
-                {saving ? "Publicando..." : "Publicar ajuste"}
-              </button>
-            </form>
-          ) : (
-            <EmptyState
-              description="Los roles Administrador y Gerente pueden publicar ajustes de stock."
-              title="Acceso solo de visualizacion"
-            />
-          )}
-        </SectionCard>
-
-        <SectionCard description="Ultimos movimientos de stock con contexto del operador." title="Ajustes recientes">
-          {adjustments.length ? (
-            <div className="space-y-3">
-              {adjustments.map((adjustment) => (
-                <div key={adjustment.id} className="rounded-2xl border border-line bg-cloud/70 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-ink">{adjustment.product_name}</p>
-                      <p className="text-sm text-muted">
-                        {adjustment.store_name} · {translateAdjustmentReason(adjustment.reason)}
-                      </p>
-                    </div>
-                    <span className={`chip ${adjustment.quantity_change < 0 ? "chip-alert" : ""}`}>
-                      {adjustment.quantity_change > 0 ? "+" : ""}
-                      {adjustment.quantity_change}
-                    </span>
+      <SectionCard
+        title="Ajustes recientes"
+        description="Últimos movimientos de stock con contexto del operador."
+      >
+        {adjustments.length ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {adjustments.map((adj) => (
+              <div key={adj.id} className="rounded-2xl border border-line bg-cloud/70 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{adj.product_name}</p>
+                    <p className="text-sm text-muted">
+                      {adj.store_name} · {translateAdjustmentReason(adj.reason)}
+                    </p>
                   </div>
-                  <p className="mt-3 text-sm text-muted">{adjustment.note || "Sin nota registrada."}</p>
-                  <p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted">
-                    {adjustment.actor_name} · {formatDate(adjustment.created_at)}
-                  </p>
+                  <span className={`chip ${adj.quantity_change < 0 ? "chip-alert" : ""}`}>
+                    {adj.quantity_change > 0 ? "+" : ""}{adj.quantity_change}
+                  </span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState description="Aun no se han registrado ajustes." title="Sin historial de ajustes" />
+                {adj.note && <p className="mt-3 text-sm text-muted">{adj.note}</p>}
+                <p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted">
+                  {adj.actor_name} · {formatDate(adj.created_at)}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState description="Aún no se han registrado ajustes." title="Sin historial de ajustes" />
+        )}
+      </SectionCard>
+
+      <Modal open={modalOpen} onClose={closeModal} title="Ajuste de stock" size="md">
+        <form className="space-y-4" onSubmit={handleAdjust}>
+          {formError && (
+            <div className="rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{formError}</div>
           )}
-        </SectionCard>
-      </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Producto</label>
+            <select className="input-field" required value={form.product_id} onChange={(e) => patch("product_id", e.target.value)}>
+              <option value="">Selecciona un producto</option>
+              {productOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
+            <select className="input-field" required value={form.store_id} onChange={(e) => patch("store_id", e.target.value)}>
+              <option value="">Selecciona una tienda</option>
+              {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Cambio de cantidad</label>
+            <input
+              className="input-field"
+              placeholder="Negativo para descontar, positivo para agregar"
+              required
+              type="number"
+              value={form.quantity_change}
+              onChange={(e) => patch("quantity_change", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Motivo</label>
+            <select className="input-field" value={form.reason} onChange={(e) => patch("reason", e.target.value)}>
+              <option value="audit">Auditoría</option>
+              <option value="purchase">Compra</option>
+              <option value="sale">Venta</option>
+              <option value="display">Exhibición</option>
+              <option value="damage">Merma</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Nota</label>
+            <textarea className="text-area-field" value={form.note} onChange={(e) => patch("note", e.target.value)} />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button className="btn-secondary flex-1" disabled={saving} type="submit">
+              {saving ? "Publicando..." : "Publicar ajuste"}
+            </button>
+            <button className="btn-ghost" onClick={closeModal} type="button">Cancelar</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

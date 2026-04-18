@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import AccessNotice from "../components/AccessNotice";
+import { useEffect, useMemo, useState } from "react";
 import EmptyState from "../components/EmptyState";
+import Modal from "../components/Modal";
 import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
 import { can } from "../lib/permissions";
@@ -28,110 +28,96 @@ const EMPTY_PURCHASE = {
 export default function PurchasesPage() {
   const { user } = useAuth();
   const canManage = can(user, "purchases.create");
+
   const [suppliers, setSuppliers] = useState([]);
   const [stores, setStores] = useState([]);
   const [products, setProducts] = useState([]);
   const [purchases, setPurchases] = useState([]);
-  const [supplierForm, setSupplierForm] = useState(EMPTY_SUPPLIER);
-  const [purchaseForm, setPurchaseForm] = useState(EMPTY_PURCHASE);
-  const [editingSupplierId, setEditingSupplierId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    loadPage();
-  }, []);
+  const [purchaseOpen, setPurchaseOpen] = useState(false);
+  const [purchaseForm, setPurchaseForm] = useState(EMPTY_PURCHASE);
+  const [purchaseDirty, setPurchaseDirty] = useState(false);
+  const [purchaseSaving, setPurchaseSaving] = useState(false);
+  const [purchaseError, setPurchaseError] = useState("");
+
+  const [supplierOpen, setSupplierOpen] = useState(false);
+  const [supplierForm, setSupplierForm] = useState(EMPTY_SUPPLIER);
+  const [editingSupplierId, setEditingSupplierId] = useState(null);
+  const [supplierDirty, setSupplierDirty] = useState(false);
+  const [supplierSaving, setSupplierSaving] = useState(false);
+  const [supplierError, setSupplierError] = useState("");
+
+  useEffect(() => { loadPage(); }, []);
 
   async function loadPage() {
     setLoading(true);
     setError("");
-
     try {
-      const [supplierResponse, storeResponse, productResponse, purchaseResponse] = await Promise.all([
+      const [suppliersRes, storesRes, productsRes, purchasesRes] = await Promise.all([
         apiRequest("/api/v1/suppliers"),
         apiRequest("/api/v1/stores"),
         apiRequest("/api/v1/products"),
         apiRequest("/api/v1/purchases"),
       ]);
-
-      setSuppliers(supplierResponse.suppliers);
-      setStores(storeResponse.stores);
-      setProducts(productResponse.products);
-      setPurchases(purchaseResponse.purchases);
-    } catch (requestError) {
-      setError(requestError.message);
+      setSuppliers(suppliersRes.suppliers);
+      setStores(storesRes.stores);
+      setProducts(productsRes.products);
+      setPurchases(purchasesRes.purchases);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }
 
-  function resetSupplierForm() {
-    setSupplierForm(EMPTY_SUPPLIER);
-    setEditingSupplierId(null);
+  const liveTotal = useMemo(
+    () => purchaseForm.items.reduce((sum, item) => sum + (Number(item.unit_cost) || 0) * (Number(item.quantity) || 0), 0),
+    [purchaseForm.items]
+  );
+
+  function patchPurchase(field, value) {
+    setPurchaseForm((f) => ({ ...f, [field]: value }));
+    setPurchaseDirty(true);
   }
 
-  function updatePurchaseItem(index, field, value) {
-    setPurchaseForm((current) => ({
-      ...current,
-      items: current.items.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, [field]: value } : item
-      ),
+  function updateItem(index, field, value) {
+    setPurchaseForm((f) => ({
+      ...f,
+      items: f.items.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     }));
+    setPurchaseDirty(true);
   }
 
-  function addPurchaseItem() {
-    setPurchaseForm((current) => ({
-      ...current,
-      items: [...current.items, { product_id: "", quantity: 1, unit_cost: "" }],
-    }));
+  function addItem() {
+    setPurchaseForm((f) => ({ ...f, items: [...f.items, { product_id: "", quantity: 1, unit_cost: "" }] }));
+    setPurchaseDirty(true);
   }
 
-  function removePurchaseItem(index) {
-    setPurchaseForm((current) => ({
-      ...current,
-      items: current.items.filter((_, itemIndex) => itemIndex !== index),
-    }));
+  function removeItem(index) {
+    setPurchaseForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== index) }));
+    setPurchaseDirty(true);
   }
 
-  async function saveSupplier(event) {
+  function openPurchase() {
+    setPurchaseForm(EMPTY_PURCHASE);
+    setPurchaseDirty(false);
+    setPurchaseError("");
+    setPurchaseOpen(true);
+  }
+
+  function closePurchase() {
+    if (purchaseDirty && !window.confirm("¿Salir sin registrar la compra?")) return;
+    setPurchaseOpen(false);
+    setPurchaseDirty(false);
+    setPurchaseError("");
+  }
+
+  async function handlePurchaseSubmit(event) {
     event.preventDefault();
-    setSaving(true);
-    setError("");
-
-    try {
-      await apiRequest(editingSupplierId ? `/api/v1/suppliers/${editingSupplierId}` : "/api/v1/suppliers", {
-        method: editingSupplierId ? "PUT" : "POST",
-        body: { supplier: supplierForm },
-      });
-
-      resetSupplierForm();
-      await loadPage();
-    } catch (submitError) {
-      setError(submitError.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function deleteSupplier(id) {
-    if (!window.confirm("¿Eliminar este proveedor?")) {
-      return;
-    }
-
-    try {
-      await apiRequest(`/api/v1/suppliers/${id}`, { method: "DELETE" });
-      await loadPage();
-    } catch (deleteError) {
-      setError(deleteError.message);
-    }
-  }
-
-  async function savePurchase(event) {
-    event.preventDefault();
-    setSaving(true);
-    setError("");
-
+    setPurchaseSaving(true);
+    setPurchaseError("");
     try {
       await apiRequest("/api/v1/purchases", {
         method: "POST",
@@ -141,282 +127,361 @@ export default function PurchasesPage() {
             items: purchaseForm.items.map((item) => ({
               ...item,
               quantity: Number(item.quantity),
-              unit_cost: Number(item.unit_cost),
+              unit_cost: item.unit_cost ? Number(item.unit_cost) : "",
             })),
           },
         },
       });
-
-      setPurchaseForm(EMPTY_PURCHASE);
+      setPurchaseOpen(false);
+      setPurchaseDirty(false);
       await loadPage();
-    } catch (submitError) {
-      setError(submitError.message);
+    } catch (err) {
+      setPurchaseError(err.message);
     } finally {
-      setSaving(false);
+      setPurchaseSaving(false);
+    }
+  }
+
+  function patchSupplier(field, value) {
+    setSupplierForm((f) => ({ ...f, [field]: value }));
+    setSupplierDirty(true);
+  }
+
+  function openNewSupplier() {
+    setEditingSupplierId(null);
+    setSupplierForm(EMPTY_SUPPLIER);
+    setSupplierDirty(false);
+    setSupplierError("");
+    setSupplierOpen(true);
+  }
+
+  function openEditSupplier(supplier) {
+    setEditingSupplierId(supplier.id);
+    setSupplierForm({
+      name: supplier.name,
+      contact_name: supplier.contact_name || "",
+      email: supplier.email || "",
+      phone: supplier.phone || "",
+      notes: supplier.notes || "",
+      active: supplier.active,
+    });
+    setSupplierDirty(false);
+    setSupplierError("");
+    setSupplierOpen(true);
+  }
+
+  function closeSupplier() {
+    if (supplierDirty && !window.confirm("¿Salir sin guardar el proveedor?")) return;
+    setSupplierOpen(false);
+    setSupplierDirty(false);
+    setSupplierError("");
+  }
+
+  async function handleSupplierSubmit(event) {
+    event.preventDefault();
+    setSupplierSaving(true);
+    setSupplierError("");
+    try {
+      await apiRequest(
+        editingSupplierId ? `/api/v1/suppliers/${editingSupplierId}` : "/api/v1/suppliers",
+        {
+          method: editingSupplierId ? "PUT" : "POST",
+          body: { supplier: supplierForm },
+        }
+      );
+      setSupplierOpen(false);
+      setSupplierDirty(false);
+      await loadPage();
+    } catch (err) {
+      setSupplierError(err.message);
+    } finally {
+      setSupplierSaving(false);
+    }
+  }
+
+  async function deleteSupplier(supplier) {
+    if (!window.confirm(`¿Eliminar "${supplier.name}"?`)) return;
+    try {
+      await apiRequest(`/api/v1/suppliers/${supplier.id}`, { method: "DELETE" });
+      await loadPage();
+    } catch (err) {
+      setError(err.message);
     }
   }
 
   return (
     <div className="space-y-6">
-      {!canManage ? (
-        <AccessNotice description="Las cuentas Operador pueden revisar el historial de compras, pero no crear proveedores ni recibir nuevas ordenes." />
-      ) : null}
+      <SectionCard
+        title="Historial de compras"
+        description="Órdenes de ingreso de mercadería con impacto automático en inventario."
+        action={
+          canManage && (
+            <button className="btn-secondary" onClick={openPurchase} type="button">
+              Registrar compra
+            </button>
+          )
+        }
+      >
+        {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
-      {error ? <div className="rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
-
-      <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-        <SectionCard description="Ficha de proveedores para los flujos de recepcion y abastecimiento." title="Proveedores">
-          {canManage ? (
-            <form className="space-y-4" onSubmit={saveSupplier}>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Nombre del proveedor</label>
-                <input
-                  className="input-field"
-                  onChange={(event) => setSupplierForm((current) => ({ ...current, name: event.target.value }))}
-                  value={supplierForm.name}
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Contacto</label>
-                  <input
-                    className="input-field"
-                    onChange={(event) =>
-                      setSupplierForm((current) => ({ ...current, contact_name: event.target.value }))
-                    }
-                    value={supplierForm.contact_name}
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Phone</label>
-                  <input
-                    className="input-field"
-                    onChange={(event) => setSupplierForm((current) => ({ ...current, phone: event.target.value }))}
-                    value={supplierForm.phone}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Email</label>
-                <input
-                  className="input-field"
-                  onChange={(event) => setSupplierForm((current) => ({ ...current, email: event.target.value }))}
-                  value={supplierForm.email}
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Notas</label>
-                <textarea
-                  className="text-area-field"
-                  onChange={(event) => setSupplierForm((current) => ({ ...current, notes: event.target.value }))}
-                  value={supplierForm.notes}
-                />
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <button className="btn-secondary" disabled={saving} type="submit">
-                  {saving ? "Guardando..." : editingSupplierId ? "Actualizar proveedor" : "Crear proveedor"}
-                </button>
-                <button className="btn-ghost" onClick={resetSupplierForm} type="button">
-                  Limpiar
-                </button>
-              </div>
-            </form>
-          ) : null}
-
-          <div className={`space-y-3 ${canManage ? "mt-6" : ""}`}>
-            {loading ? (
-              <p className="text-sm text-muted">Cargando proveedores...</p>
-            ) : suppliers.length ? (
-              suppliers.map((supplier) => (
-                <div key={supplier.id} className="rounded-2xl border border-line bg-cloud/70 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-ink">{supplier.name}</p>
-                      <p className="mt-1 text-sm text-muted">
-                        {supplier.contact_name || "Sin contacto"} · {supplier.phone || "Sin telefono"}
-                      </p>
-                    </div>
-                    <span className="chip">{supplier.active ? "Activo" : "Inactivo"}</span>
-                  </div>
-                  <p className="mt-3 text-sm text-muted">{supplier.email || "Sin correo definido"}</p>
-                  {canManage ? (
-                    <div className="mt-4 flex gap-2">
-                      <button
-                        className="btn-ghost h-10 px-4"
-                        onClick={() => {
-                          setEditingSupplierId(supplier.id);
-                          setSupplierForm(supplier);
-                        }}
-                        type="button"
-                      >
-                        Editar
-                      </button>
-                      <button className="btn-primary h-10 bg-accent px-4" onClick={() => deleteSupplier(supplier.id)} type="button">
-                        Eliminar
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-              ))
-            ) : (
-              <EmptyState description="Agrega proveedores para comenzar a registrar compras." title="No hay proveedores disponibles" />
-            )}
-          </div>
-        </SectionCard>
-
-        <SectionCard description="Recibe mercaderia de proveedores y aumenta inventario automaticamente." title="Ingreso de compras">
-          {canManage ? (
-            <form className="space-y-4" onSubmit={savePurchase}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Proveedor</label>
-                  <select
-                    className="input-field"
-                    onChange={(event) =>
-                      setPurchaseForm((current) => ({ ...current, supplier_id: event.target.value }))
-                    }
-                    value={purchaseForm.supplier_id}
-                  >
-                    <option value="">Selecciona un proveedor</option>
-                    {suppliers.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
-                  <select
-                    className="input-field"
-                    onChange={(event) => setPurchaseForm((current) => ({ ...current, store_id: event.target.value }))}
-                    value={purchaseForm.store_id}
-                  >
-                    <option value="">Selecciona una tienda</option>
-                    {stores.map((store) => (
-                      <option key={store.id} value={store.id}>
-                        {store.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Fecha de recepcion</label>
-                  <input
-                    className="input-field"
-                    onChange={(event) => setPurchaseForm((current) => ({ ...current, received_on: event.target.value }))}
-                    type="date"
-                    value={purchaseForm.received_on}
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-ink">Estado</label>
-                  <select
-                    className="input-field"
-                    onChange={(event) => setPurchaseForm((current) => ({ ...current, status: event.target.value }))}
-                    value={purchaseForm.status}
-                  >
-                    <option value="received">Recibida</option>
-                    <option value="draft">Borrador</option>
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {purchaseForm.items.map((item, index) => (
-                  <div key={`purchase-item-${index}`} className="rounded-2xl border border-line bg-cloud/70 p-4">
-                    <div className="grid gap-4 md:grid-cols-[1.6fr_0.7fr_0.7fr_auto]">
-                      <select
-                        className="input-field"
-                        onChange={(event) => updatePurchaseItem(index, "product_id", event.target.value)}
-                        value={item.product_id}
-                      >
-                        <option value="">Selecciona un producto</option>
-                        {products.map((product) => (
-                          <option key={product.id} value={product.id}>
-                            {product.name} ({product.sku})
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        className="input-field"
-                        min="1"
-                        onChange={(event) => updatePurchaseItem(index, "quantity", event.target.value)}
-                        placeholder="Cant."
-                        type="number"
-                        value={item.quantity}
-                      />
-                      <input
-                        className="input-field"
-                        min="0"
-                        onChange={(event) => updatePurchaseItem(index, "unit_cost", event.target.value)}
-                        placeholder="Costo $"
-                        step="1"
-                        type="number"
-                        value={item.unit_cost}
-                      />
-                      <button
-                        className="btn-ghost"
-                        disabled={purchaseForm.items.length === 1}
-                        onClick={() => removePurchaseItem(index)}
-                        type="button"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <button className="btn-ghost" onClick={addPurchaseItem} type="button">
-                  Agregar linea
-                </button>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-ink">Notas</label>
-                <textarea
-                  className="text-area-field"
-                  onChange={(event) => setPurchaseForm((current) => ({ ...current, notes: event.target.value }))}
-                  value={purchaseForm.notes}
-                />
-              </div>
-              <button className="btn-secondary w-full" disabled={saving} type="submit">
-                {saving ? "Guardando compra..." : "Registrar compra"}
-              </button>
-            </form>
-          ) : null}
-
-          <div className={`${canManage ? "mt-6" : ""} overflow-x-auto`}>
-            {purchases.length ? (
-              <table className="min-w-full text-left text-sm">
-                <thead className="text-xs uppercase tracking-[0.22em] text-muted">
-                  <tr>
-                    <th className="pb-4">Referencia</th>
-                    <th className="pb-4">Proveedor</th>
-                    <th className="pb-4">Tienda</th>
-                    <th className="pb-4">Fecha</th>
-                    <th className="pb-4 text-right">Total</th>
+        {loading ? (
+          <p className="text-sm text-muted">Cargando compras...</p>
+        ) : purchases.length ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="text-xs uppercase tracking-[0.22em] text-muted">
+                <tr>
+                  <th className="pb-4">Referencia</th>
+                  <th className="pb-4">Proveedor</th>
+                  <th className="pb-4">Tienda</th>
+                  <th className="pb-4">Fecha</th>
+                  <th className="pb-4 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {purchases.map((purchase) => (
+                  <tr key={purchase.id}>
+                    <td className="py-4 font-medium text-ink">{purchase.reference}</td>
+                    <td className="py-4 text-muted">{purchase.supplier.name}</td>
+                    <td className="py-4 text-muted">{purchase.store.name}</td>
+                    <td className="py-4 text-muted">{formatDate(purchase.received_on)}</td>
+                    <td className="py-4 text-right font-medium text-ink">{formatCurrency(purchase.total_amount)}</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {purchases.map((purchase) => (
-                    <tr key={purchase.id}>
-                      <td className="py-4 font-medium text-ink">{purchase.reference}</td>
-                      <td className="py-4 text-muted">{purchase.supplier.name}</td>
-                      <td className="py-4 text-muted">{purchase.store.name}</td>
-                      <td className="py-4 text-muted">{formatDate(purchase.received_on)}</td>
-                      <td className="py-4 text-right font-medium text-ink">{formatCurrency(purchase.total_amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <EmptyState description="Las transacciones apareceran una vez que comience el ingreso de compras." title="Sin historial de compras" />
-            )}
+                ))}
+              </tbody>
+            </table>
           </div>
-        </SectionCard>
-      </div>
+        ) : (
+          <EmptyState
+            description="Las transacciones aparecerán una vez que comience el ingreso de compras."
+            title="Sin historial de compras"
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Proveedores"
+        description="Directorio de proveedores para los flujos de recepción y abastecimiento."
+        action={
+          canManage && (
+            <button className="btn-secondary" onClick={openNewSupplier} type="button">
+              Nuevo proveedor
+            </button>
+          )
+        }
+      >
+        {suppliers.length ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="text-xs uppercase tracking-[0.22em] text-muted">
+                <tr>
+                  <th className="pb-4">Proveedor</th>
+                  <th className="pb-4">Contacto</th>
+                  <th className="pb-4">Email</th>
+                  <th className="pb-4">Estado</th>
+                  {canManage && <th className="pb-4 text-right">Acciones</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {suppliers.map((supplier) => (
+                  <tr key={supplier.id}>
+                    <td className="py-4">
+                      <p className="font-medium text-ink">{supplier.name}</p>
+                      {supplier.phone && <p className="mt-0.5 text-sm text-muted">{supplier.phone}</p>}
+                    </td>
+                    <td className="py-4 text-muted">{supplier.contact_name || "—"}</td>
+                    <td className="py-4 text-muted">{supplier.email || "—"}</td>
+                    <td className="py-4">
+                      <span className={`chip ${supplier.active ? "" : "chip-alert"}`}>
+                        {supplier.active ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                    {canManage && (
+                      <td className="py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            className="btn-ghost h-9 px-4 text-sm"
+                            onClick={() => openEditSupplier(supplier)}
+                            type="button"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            className="btn-ghost h-9 border-accent/20 px-4 text-sm text-accent hover:bg-accent/5"
+                            onClick={() => deleteSupplier(supplier)}
+                            type="button"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState
+            description="Agrega proveedores para comenzar a registrar compras."
+            title="Sin proveedores"
+          />
+        )}
+      </SectionCard>
+
+      <Modal open={purchaseOpen} onClose={closePurchase} title="Registrar compra" size="xl">
+        <form className="space-y-5" onSubmit={handlePurchaseSubmit}>
+          {purchaseError && (
+            <div className="rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{purchaseError}</div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-ink">Proveedor</label>
+              <select className="input-field" required value={purchaseForm.supplier_id} onChange={(e) => patchPurchase("supplier_id", e.target.value)}>
+                <option value="">Selecciona un proveedor</option>
+                {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-ink">Tienda</label>
+              <select className="input-field" required value={purchaseForm.store_id} onChange={(e) => patchPurchase("store_id", e.target.value)}>
+                <option value="">Selecciona una tienda</option>
+                {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-ink">Fecha de recepción</label>
+              <input className="input-field" type="date" value={purchaseForm.received_on} onChange={(e) => patchPurchase("received_on", e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-ink">Estado</label>
+              <select className="input-field" value={purchaseForm.status} onChange={(e) => patchPurchase("status", e.target.value)}>
+                <option value="received">Recibida</option>
+                <option value="draft">Borrador</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <label className="text-sm font-medium text-ink">Líneas de compra</label>
+              <button className="btn-ghost h-9 px-4 text-sm" onClick={addItem} type="button">
+                + Agregar línea
+              </button>
+            </div>
+            <div className="space-y-2">
+              {purchaseForm.items.map((item, index) => (
+                <div key={`purchase-item-${index}`} className="grid gap-2 rounded-2xl border border-line bg-cloud/60 p-3 md:grid-cols-[1.6fr_0.6fr_0.8fr_auto]">
+                  <select
+                    className="input-field"
+                    value={item.product_id}
+                    onChange={(e) => updateItem(index, "product_id", e.target.value)}
+                  >
+                    <option value="">Producto</option>
+                    {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
+                  </select>
+                  <input
+                    className="input-field"
+                    min="1"
+                    placeholder="Cant."
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                  />
+                  <input
+                    className="input-field"
+                    min="0"
+                    placeholder="Costo $"
+                    step="1"
+                    type="number"
+                    value={item.unit_cost}
+                    onChange={(e) => updateItem(index, "unit_cost", e.target.value)}
+                  />
+                  <button
+                    className="btn-ghost h-12 px-3 text-sm disabled:opacity-40"
+                    disabled={purchaseForm.items.length === 1}
+                    onClick={() => removeItem(index)}
+                    type="button"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {liveTotal > 0 && (
+            <div className="rounded-2xl border border-brand/30 bg-brand/5 px-4 py-3">
+              <p className="text-sm text-muted">Total estimado</p>
+              <p className="text-2xl font-semibold tracking-[-0.04em] text-ink">{formatCurrency(liveTotal)}</p>
+            </div>
+          )}
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Notas</label>
+            <textarea className="text-area-field" value={purchaseForm.notes} onChange={(e) => patchPurchase("notes", e.target.value)} />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button className="btn-secondary flex-1" disabled={purchaseSaving} type="submit">
+              {purchaseSaving ? "Guardando compra..." : "Registrar compra"}
+            </button>
+            <button className="btn-ghost" onClick={closePurchase} type="button">Cancelar</button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={supplierOpen} onClose={closeSupplier} title={editingSupplierId ? "Editar proveedor" : "Nuevo proveedor"} size="md">
+        <form className="space-y-4" onSubmit={handleSupplierSubmit}>
+          {supplierError && (
+            <div className="rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{supplierError}</div>
+          )}
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Nombre</label>
+            <input className="input-field" required value={supplierForm.name} onChange={(e) => patchSupplier("name", e.target.value)} />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-ink">Contacto</label>
+              <input className="input-field" value={supplierForm.contact_name} onChange={(e) => patchSupplier("contact_name", e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-ink">Teléfono</label>
+              <input className="input-field" value={supplierForm.phone} onChange={(e) => patchSupplier("phone", e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Email</label>
+            <input className="input-field" type="email" value={supplierForm.email} onChange={(e) => patchSupplier("email", e.target.value)} />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Notas</label>
+            <textarea className="text-area-field" value={supplierForm.notes} onChange={(e) => patchSupplier("notes", e.target.value)} />
+          </div>
+
+          {editingSupplierId && (
+            <label className="flex items-center gap-3 text-sm text-muted">
+              <input type="checkbox" checked={supplierForm.active} onChange={(e) => patchSupplier("active", e.target.checked)} />
+              Proveedor activo
+            </label>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button className="btn-secondary flex-1" disabled={supplierSaving} type="submit">
+              {supplierSaving ? "Guardando..." : editingSupplierId ? "Actualizar proveedor" : "Crear proveedor"}
+            </button>
+            <button className="btn-ghost" onClick={closeSupplier} type="button">Cancelar</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
