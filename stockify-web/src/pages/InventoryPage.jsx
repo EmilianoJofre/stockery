@@ -1,4 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { HiAdjustmentsHorizontal } from "react-icons/hi2";
+import CategoryBar from "../components/CategoryBar";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import SectionCard from "../components/SectionCard";
@@ -24,9 +26,12 @@ export default function InventoryPage() {
   const [adjustments, setAdjustments] = useState([]);
   const [stores, setStores] = useState([]);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [storeId, setStoreId] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [showCategoryBar, setShowCategoryBar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -38,16 +43,18 @@ export default function InventoryPage() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => { loadLookups(); }, []);
-  useEffect(() => { loadInventory(); }, [deferredSearch, storeId, lowStockOnly]);
+  useEffect(() => { loadInventory(); }, [deferredSearch, storeId, lowStockOnly, selectedCategories]);
 
   async function loadLookups() {
     try {
-      const [storesRes, productsRes] = await Promise.all([
+      const [storesRes, productsRes, categoriesRes] = await Promise.all([
         apiRequest("/api/v1/stores"),
         apiRequest("/api/v1/products"),
+        apiRequest("/api/v1/product_categories"),
       ]);
       setStores(storesRes.stores);
       setProducts(productsRes.products);
+      setCategories(categoriesRes.product_categories);
     } catch (err) {
       setError(err.message);
     }
@@ -61,6 +68,7 @@ export default function InventoryPage() {
       if (deferredSearch) query.set("q", deferredSearch);
       if (storeId) query.set("store_id", storeId);
       if (lowStockOnly) query.set("low_stock", "true");
+      selectedCategories.forEach((id) => query.append("category_ids[]", id));
       const response = await apiRequest(`/api/v1/inventory${query.toString() ? `?${query}` : ""}`);
       setInventory(response.inventory);
       setAdjustments(response.adjustments);
@@ -69,6 +77,12 @@ export default function InventoryPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function toggleCategory(id) {
+    setSelectedCategories((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
   }
 
   const productOptions = useMemo(
@@ -132,6 +146,25 @@ export default function InventoryPage() {
               placeholder="Buscar inventario"
               value={search}
             />
+            {categories.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowCategoryBar((v) => !v)}
+                className={`btn-ghost shrink-0 flex items-center gap-2 ${
+                  selectedCategories.length > 0 || showCategoryBar
+                    ? "border-brand bg-brand/5 text-brand"
+                    : ""
+                }`}
+              >
+                <HiAdjustmentsHorizontal className="h-4 w-4" />
+                Categorías
+                {selectedCategories.length > 0 && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-semibold text-white">
+                    {selectedCategories.length}
+                  </span>
+                )}
+              </button>
+            )}
             {stores.length > 1 && (
               <select
                 className="input-field w-[170px]"
@@ -159,6 +192,17 @@ export default function InventoryPage() {
           </div>
         }
       >
+        {showCategoryBar && categories.length > 0 && (
+          <div className="mb-5">
+            <CategoryBar
+              categories={categories}
+              selected={selectedCategories}
+              onToggle={toggleCategory}
+              onClear={() => setSelectedCategories([])}
+            />
+          </div>
+        )}
+
         {error ? <div className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{error}</div> : null}
 
         {loading ? (

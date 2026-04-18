@@ -16,6 +16,7 @@ module Api
         end
 
         levels = levels.where(store_id: params[:store_id]) if params[:store_id].present?
+        levels = levels.where(products: { product_category_id: params[:category_ids] }) if params[:category_ids].present?
 
         rows = levels.to_a
         rows = rows.select(&:low_stock?) if params[:low_stock] == "true"
