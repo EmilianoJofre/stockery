@@ -37,7 +37,7 @@ module Api
       end
 
       def customer_params
-        params.require(:customer).permit(:rut, :name, :giro, :email, :phone, :address, :active)
+        params.require(:customer).permit(:rut, :name, :giro, :email, :phone, :address, :comuna, :active)
       end
     end
   end

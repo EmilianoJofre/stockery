@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_06_004001) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_06_005001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -52,6 +52,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_06_004001) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "comuna"
     t.index ["company_id", "name"], name: "index_customers_on_company_id_and_name"
     t.index ["company_id", "rut"], name: "index_customers_on_company_id_and_rut", unique: true, where: "(rut IS NOT NULL)"
     t.index ["company_id"], name: "index_customers_on_company_id"

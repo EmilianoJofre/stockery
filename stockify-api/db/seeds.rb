@@ -394,9 +394,9 @@ company.create_dte_setting!(
 # Clientes con RUT valido (digito verificador real), para poder emitir facturas.
 [
   { rut: "76192083-9", name: "Comercial Los Andes SpA", giro: "Comercio al por menor",
-    email: "pagos@losandes.cl", address: "Av. Providencia 1234, Providencia" },
+    email: "pagos@losandes.cl", address: "Av. Providencia 1234", comuna: "Providencia" },
   { rut: "5126663-3",  name: "Rosa Fuentes Miranda", giro: "Almacen de barrio",
-    email: "rosa.fuentes@gmail.com", address: "Pasaje Los Lirios 45, La Florida" }
+    email: "rosa.fuentes@gmail.com", address: "Pasaje Los Lirios 45", comuna: "La Florida" }
 ].each { |attrs| company.customers.create!(attrs) }
 
 # Un producto exento de IVA, para que el desglose neto/IVA/exento sea observable.

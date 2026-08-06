@@ -301,6 +301,7 @@ class ApplicationController < ActionController::API
       email: customer.email,
       phone: customer.phone,
       address: customer.address,
+      comuna: customer.comuna,
       active: customer.active
     }
   end

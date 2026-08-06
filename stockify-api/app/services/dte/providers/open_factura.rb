@@ -6,14 +6,16 @@ module Dte
   module Providers
     # Adaptador para OpenFactura (Haulmer).
     #
-    # ADVERTENCIA: escrito contra el contrato documentado y contra el plugin
-    # oficial de WooCommerce (haulmer/openfactura-woocommerce), pero NO
-    # verificado contra la API en vivo: requiere una apikey que no tenemos.
-    # Antes de usarlo en produccion hay que correrlo contra el ambiente de
-    # demostracion (dev-api) y ajustar el mapeo de la respuesta.
+    # VERIFICADO contra el ambiente de demostracion (dev-api.haulmer.com) con
+    # la apikey publica del plugin oficial de WooCommerce: boleta (39), factura
+    # (33) y nota de credito (61) emitidas con folio y track id reales.
     #
-    # OpenFactura administra los folios: por eso `folio_strategy` deberia ser
+    # OpenFactura administra los folios: por eso `folio_strategy` debe ser
     # "provider" con este adaptador, y el folio llega en la respuesta.
+    #
+    # El ambiente de demostracion solo acepta documentos de la organizacion de
+    # prueba de Haulmer: los datos del emisor deben ser los suyos, no los de la
+    # empresa real. Se obtienen con GET /v2/dte/organization.
     class OpenFactura
       BASE_URLS = {
         "sandbox"    => "https://dev-api.haulmer.com",

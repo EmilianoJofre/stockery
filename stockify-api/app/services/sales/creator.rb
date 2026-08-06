@@ -112,7 +112,9 @@ module Sales
         rut:   normalized,
         name:  @params[:customer_name].presence || "Cliente #{normalized}",
         email: @params[:customer_email],
-        giro:  @params[:customer_giro]
+        giro:  @params[:customer_giro],
+        address: @params[:customer_address],
+        comuna: @params[:customer_comuna]
       )
     end
 

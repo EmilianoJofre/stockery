@@ -66,6 +66,7 @@ module Api
           :store_id, :status, :reference, :sold_on, :notes,
           :document_type, :issue,
           :customer_id, :customer_name, :customer_rut, :customer_email, :customer_giro,
+          :customer_address, :customer_comuna,
           items: %i[product_id quantity unit_price]
         )
       end
