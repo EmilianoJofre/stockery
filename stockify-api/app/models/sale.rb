@@ -41,6 +41,10 @@ class Sale < ApplicationRecord
   # Una factura identifica al receptor; una boleta no lo exige.
   validates :customer, presence: { message: "es obligatorio para una factura" },
                        if: -> { document_factura? || document_factura_exenta? }
+  # El SII exige RUT y comuna del receptor en una factura. Se valida aca para
+  # fallar al registrarla, con un mensaje accionable, en vez de que el rechazo
+  # llegue recien al transmitir el documento.
+  validate :factura_receptor_completo, if: -> { document_factura? || document_factura_exenta? }
   # El SII no acepta una nota de credito que no diga que documento corrige.
   validates :references_sale, presence: { message: "es obligatorio en una nota de credito" },
                               if: -> { document_nota_credito? }
@@ -111,6 +115,13 @@ class Sale < ApplicationRecord
 
   def assign_reference
     self.reference = reference.presence || self.class.generate_reference
+  end
+
+  def factura_receptor_completo
+    return if customer.blank?
+
+    errors.add(:customer, "necesita RUT para emitir una factura") if customer.rut.blank?
+    errors.add(:customer, "necesita comuna para emitir una factura") if customer.comuna.blank?
   end
 
   # Los precios de venta son BRUTOS (IVA incluido), como el precio de gondola.

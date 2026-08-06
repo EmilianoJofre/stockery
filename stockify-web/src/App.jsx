@@ -5,6 +5,7 @@ import HeaderBar from "./components/HeaderBar";
 import BrandMark from "./components/BrandMark";
 import Sidebar from "./components/Sidebar";
 import BillingPage from "./pages/BillingPage";
+import CustomersPage from "./pages/CustomersPage";
 import DashboardPage from "./pages/DashboardPage";
 import InventoryPage from "./pages/InventoryPage";
 import LoginPage from "./pages/LoginPage";
@@ -106,6 +107,7 @@ function Shell() {
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/purchases" element={<PurchasesPage />} />
             <Route path="/sales" element={<SalesPage />} />
+            <Route path="/customers" element={<CustomersPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/billing" element={<BillingPage />} />

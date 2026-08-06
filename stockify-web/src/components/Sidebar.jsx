@@ -8,6 +8,7 @@ import {
   HiCube,
   HiHomeModern,
   HiShoppingCart,
+  HiIdentification,
   HiTruck,
   HiUserGroup,
   HiXMark,
@@ -22,6 +23,7 @@ const CORE_MODULES = [
   { to: "/inventory", label: "Inventario", icon: HiCircleStack    },
   { to: "/purchases", label: "Compras",    icon: HiTruck          },
   { to: "/sales",     label: "Ventas",     icon: HiShoppingCart   },
+  { to: "/customers", label: "Clientes",   icon: HiIdentification },
   { to: "/reports",   label: "Reportes",   icon: HiChartBarSquare },
 ];
 

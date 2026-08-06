@@ -17,6 +17,8 @@ const EMPTY_FORM = {
   customer_name: "",
   customer_rut: "",
   customer_giro: "",
+  customer_address: "",
+  customer_comuna: "",
   issue: true,
   status: "completed",
   notes: "",
@@ -491,12 +493,29 @@ export default function SalesPage() {
                   onChange={(e) => patchForm("customer_name", e.target.value)}
                 />
                 {needsCustomer && (
-                  <input
-                    className="input-field sm:col-span-2"
-                    placeholder="Giro"
-                    value={form.customer_giro}
-                    onChange={(e) => patchForm("customer_giro", e.target.value)}
-                  />
+                  <>
+                    <input
+                      className="input-field sm:col-span-2"
+                      placeholder="Giro"
+                      value={form.customer_giro}
+                      onChange={(e) => patchForm("customer_giro", e.target.value)}
+                    />
+                    <input
+                      className="input-field"
+                      placeholder="Dirección"
+                      value={form.customer_address}
+                      onChange={(e) => patchForm("customer_address", e.target.value)}
+                    />
+                    {/* El SII exige CmnaRecep en una factura: sin comuna el
+                        documento sería rechazado al transmitirlo. */}
+                    <input
+                      className="input-field"
+                      placeholder="Comuna"
+                      required
+                      value={form.customer_comuna}
+                      onChange={(e) => patchForm("customer_comuna", e.target.value)}
+                    />
+                  </>
                 )}
               </div>
             )}
