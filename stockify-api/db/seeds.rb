@@ -4,7 +4,7 @@ puts "Cargando workspace demo de Stockery..."
   SaleItem, Sale,
   InventoryMovement, InventoryLot, InventoryLevel,
   PurchaseItem, Purchase,
-  CafRange, Customer,
+  DteSetting, CafRange, Customer,
   Product, ProductCategory, Supplier, Store,
   UserPermission, User,
   RolePermission, Permission,
@@ -373,6 +373,20 @@ end
     expires_on:    Date.current + 180
   )
 end
+
+# Emision electronica en modo simulado: permite recorrer el flujo completo sin
+# certificado digital ni cuenta de proveedor. NO emite documentos validos.
+company.create_dte_setting!(
+  provider:       "simulated",
+  environment:    "sandbox",
+  folio_strategy: "own_caf",
+  rut_emisor:     "76543210-K",
+  razon_social:   company.name,
+  giro:           "Venta al por menor en almacenes no especializados",
+  acteco:         "471100",
+  dir_origen:     "Av. Grecia 1240",
+  cmna_origen:    "Ñuñoa"
+)
 
 # Clientes con RUT valido (digito verificador real), para poder emitir facturas.
 [

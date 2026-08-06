@@ -9,6 +9,7 @@ class ApplicationController < ActionController::API
   # folios son condiciones esperables, no fallas del servidor.
   rescue_from Sale::Immutable, with: :render_domain_error
   rescue_from CafRange::Exhausted, with: :render_domain_error
+  rescue_from Dte::TransmissionError, with: :render_domain_error
 
   private
 

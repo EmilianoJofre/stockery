@@ -6,6 +6,7 @@ class Company < ApplicationRecord
   has_many :product_categories, dependent: :destroy
   has_many :customers, dependent: :destroy
   has_many :caf_ranges, dependent: :destroy
+  has_one  :dte_setting, dependent: :destroy
   has_many :inventory_lots, dependent: :destroy
 
   def default_store

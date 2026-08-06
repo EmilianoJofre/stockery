@@ -203,9 +203,15 @@ export default function SalesPage() {
                         <span className="font-medium text-ink">
                           {translateDocumentType(sale.document_type, { short: true })}
                         </span>
+                        {/* Con folio del proveedor el documento queda emitido
+                            antes de tener folio: no es "sin emitir". */}
                         {sale.folio ? (
                           <span className="chip border-transparent bg-brand/10 text-brand">
                             N° {sale.folio}
+                          </span>
+                        ) : sale.issued ? (
+                          <span className="chip border-transparent bg-amber-100 text-amber-800">
+                            En emisión
                           </span>
                         ) : (
                           <span className="chip">Sin emitir</span>

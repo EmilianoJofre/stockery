@@ -50,25 +50,14 @@ class Sale < ApplicationRecord
     issued_at.present?
   end
 
-  # Marca el documento como emitido y le asigna folio del CAF vigente.
-  # Desde aca el documento queda inmutable: un DTE emitido no se edita, se
-  # corrige con una nota de credito.
+  # Emite el documento: reserva folio, lo congela y lo deja en cola para el
+  # SII. Desde aca es inmutable: un DTE emitido no se edita, se corrige con
+  # una nota de credito.
+  #
+  # La logica vive en Dte::Emitter porque depende de la configuracion de la
+  # empresa (quien asigna el folio, que proveedor transmite).
   def issue!
-    raise Immutable, "El documento #{reference} ya fue emitido" if issued?
-
-    self.class.transaction do
-      folio, range = CafRange.assign_folio!(company: store.company, document_type: self.class.document_types[document_type])
-
-      update_columns(
-        folio: folio,
-        caf_range_id: range.id,
-        issued_at: Time.current,
-        sii_status: self.class.sii_statuses[:queued],
-        updated_at: Time.current
-      )
-    end
-
-    self
+    Dte::Emitter.new(self).issue!
   end
 
   private
