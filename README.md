@@ -36,6 +36,28 @@ npm install
 npm run dev
 ```
 
+### Tests
+
+```bash
+cd stockify-api
+RAILS_ENV=test bundle exec rails db:prepare   # solo la primera vez
+bundle exec rails test
+```
+
+Cubre el nucleo critico: consumo FEFO de lotes, devolucion al lote de origen,
+asignacion de folios (incluida la concurrencia), inmutabilidad de un DTE
+emitido, calculo de neto/IVA/exento, notas de credito totales y parciales, y el
+esquema del SII para boleta vs factura.
+
+Dos cosas a saber si se agregan pruebas:
+
+- El adaptador de ActiveJob en test es `:test`: los jobs se encolan pero no
+  corren. Con `:async` los hilos usan otras conexiones, no ven los datos sin
+  commitear del test y cuelgan la suite.
+- Las pruebas que usan varios hilos sobre la misma tabla necesitan
+  `self.use_transactional_tests = false` y limpieza manual, por la misma razon.
+  Ver `test/models/caf_range_concurrency_test.rb`.
+
 El frontend proxy-a las rutas `/api` en desarrollo. Fuera de Docker usa por defecto `http://localhost:3000`; en Docker Compose el target del proxy queda configurado como `http://api:3000`.
 
 ## Docker

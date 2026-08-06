@@ -28,6 +28,12 @@ Rails.application.configure do
   config.action_controller.perform_caching = false
   config.cache_store = :null_store
 
+  # Los jobs se encolan pero no se ejecutan. Con el adaptador :async (el
+  # default) DteTransmissionJob corre en hilos reales que usan otras conexiones:
+  # no ven los datos sin commitear del test y compiten por el pool, lo que
+  # terminaba colgando la suite.
+  config.active_job.queue_adapter = :test
+
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable
 
