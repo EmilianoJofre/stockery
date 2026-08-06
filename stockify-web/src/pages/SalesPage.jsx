@@ -38,6 +38,11 @@ export default function SalesPage() {
   const [error, setError] = useState("");
   const [issuingId, setIssuingId] = useState(null);
 
+  const [creditSale, setCreditSale] = useState(null);
+  const [creditForm, setCreditForm] = useState({ reason: "", items: [] });
+  const [creditSaving, setCreditSaving] = useState(false);
+  const [creditError, setCreditError] = useState("");
+
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [isDirty, setIsDirty] = useState(false);
@@ -78,6 +83,51 @@ export default function SalesPage() {
   );
 
   const needsCustomer = REQUIRES_CUSTOMER.includes(form.document_type);
+
+  function openCreditNote(sale) {
+    setCreditSale(sale);
+    // Se precarga con la devolución total; bajar una cantidad la vuelve parcial.
+    setCreditForm({
+      reason: "",
+      items: sale.items.map((item) => ({
+        product_id: item.product_id,
+        product_name: item.product_name,
+        sold: item.quantity,
+        quantity: item.quantity,
+      })),
+    });
+    setCreditError("");
+  }
+
+  async function handleCreditNote(event) {
+    event.preventDefault();
+    setCreditSaving(true);
+    setCreditError("");
+    try {
+      const returning = creditForm.items.filter((i) => Number(i.quantity) > 0);
+      const isFull = returning.length === creditForm.items.length &&
+        returning.every((i) => Number(i.quantity) === i.sold);
+
+      await apiRequest(`/api/v1/sales/${creditSale.id}/credit_note`, {
+        method: "POST",
+        body: {
+          credit_note: {
+            reason: creditForm.reason,
+            // Sin items el backend devuelve todo lo pendiente.
+            ...(isFull
+              ? {}
+              : { items: returning.map((i) => ({ product_id: i.product_id, quantity: Number(i.quantity) })) }),
+          },
+        },
+      });
+      setCreditSale(null);
+      await loadPage();
+    } catch (err) {
+      setCreditError(err.message);
+    } finally {
+      setCreditSaving(false);
+    }
+  }
 
   async function handleIssue(sale) {
     if (!window.confirm(
@@ -223,6 +273,12 @@ export default function SalesPage() {
                           {translateSiiStatus(sale.sii_status)}
                         </p>
                       )}
+                      {sale.references_sale && (
+                        <p className="mt-1 text-xs text-muted">
+                          Corrige {sale.references_sale.reference}
+                          {sale.references_sale.folio ? ` (N° ${sale.references_sale.folio})` : ""}
+                        </p>
+                      )}
                     </td>
                     <td className="py-4 text-muted">
                       {sale.customer ? (
@@ -248,9 +304,7 @@ export default function SalesPage() {
                     <td className="py-4 text-right font-medium text-ink">{formatCurrency(sale.total_amount)}</td>
                     {canCreate && (
                       <td className="py-4 text-right">
-                        {sale.issued ? (
-                          <span className="text-xs uppercase tracking-[0.18em] text-muted">Emitido</span>
-                        ) : (
+                        {!sale.issued ? (
                           <button
                             className="btn-ghost h-9 px-4 text-sm"
                             disabled={issuingId === sale.id}
@@ -258,6 +312,19 @@ export default function SalesPage() {
                             type="button"
                           >
                             {issuingId === sale.id ? "Emitiendo..." : "Emitir"}
+                          </button>
+                        ) : sale.annulled ? (
+                          <span className="chip border-transparent bg-rose-100 text-rose-700">Anulada</span>
+                        ) : sale.credit_note ? (
+                          <span className="text-xs uppercase tracking-[0.18em] text-muted">Emitida</span>
+                        ) : (
+                          // Un DTE emitido no se edita: se corrige con nota de crédito.
+                          <button
+                            className="btn-ghost h-9 px-4 text-sm"
+                            onClick={() => openCreditNote(sale)}
+                            type="button"
+                          >
+                            Nota de crédito
                           </button>
                         )}
                       </td>
@@ -274,6 +341,82 @@ export default function SalesPage() {
           />
         )}
       </SectionCard>
+
+      <Modal
+        open={Boolean(creditSale)}
+        onClose={() => setCreditSale(null)}
+        title={`Nota de crédito sobre ${creditSale?.reference || ""}`}
+        size="xl"
+      >
+        <form className="space-y-5" onSubmit={handleCreditNote}>
+          {creditError && (
+            <div className="rounded-2xl bg-accent/5 px-4 py-3 text-sm text-accent">{creditError}</div>
+          )}
+
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-[13px] leading-6 text-amber-900">
+              Un documento emitido no se edita: se corrige emitiendo una nota de crédito. El stock
+              devuelto <strong>vuelve al lote exacto del que salió</strong>, conservando su
+              vencimiento. Si devuelves todo, el documento original queda anulado.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">Motivo</label>
+            <input
+              className="input-field"
+              placeholder="Ej. cliente se arrepintió, error de digitación"
+              value={creditForm.reason}
+              onChange={(e) => setCreditForm((f) => ({ ...f, reason: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <p className="mb-3 text-sm font-medium text-ink">Unidades a devolver</p>
+            <div className="space-y-2">
+              {creditForm.items.map((item, index) => (
+                <div
+                  key={item.product_id}
+                  className="grid items-center gap-3 rounded-2xl border border-line bg-cloud/60 p-3 sm:grid-cols-[1fr_auto]"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-ink">{item.product_name}</p>
+                    <p className="text-sm text-muted">Vendidas: {item.sold}</p>
+                  </div>
+                  <input
+                    className="input-field w-28"
+                    max={item.sold}
+                    min="0"
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) =>
+                      setCreditForm((f) => ({
+                        ...f,
+                        items: f.items.map((it, i) =>
+                          i === index ? { ...it, quantity: e.target.value } : it
+                        ),
+                      }))
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-muted">
+              Baja la cantidad para una devolución parcial. Si ya emitiste notas de crédito sobre
+              este documento, solo puedes devolver lo que quede pendiente.
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button className="btn-secondary flex-1" disabled={creditSaving} type="submit">
+              {creditSaving ? "Emitiendo..." : "Emitir nota de crédito"}
+            </button>
+            <button className="btn-ghost" onClick={() => setCreditSale(null)} type="button">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       <Modal open={modalOpen} onClose={closeModal} title="Registrar venta" size="xl">
         <form className="space-y-5" onSubmit={handleSubmit}>

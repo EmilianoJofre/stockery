@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_06_003001) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_06_004001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -247,10 +247,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_06_003001) do
     t.integer "sii_status", default: 0, null: false
     t.string "sii_track_id"
     t.bigint "customer_id"
+    t.bigint "references_sale_id"
+    t.integer "reference_code"
+    t.string "reference_reason"
+    t.datetime "annulled_at"
+    t.index ["annulled_at"], name: "index_sales_on_annulled_at"
     t.index ["caf_range_id"], name: "index_sales_on_caf_range_id"
     t.index ["customer_id"], name: "index_sales_on_customer_id"
     t.index ["issued_at"], name: "index_sales_on_issued_at"
     t.index ["reference"], name: "index_sales_on_reference", unique: true
+    t.index ["references_sale_id"], name: "index_sales_on_references_sale_id"
     t.index ["store_id", "document_type", "folio"], name: "index_sales_on_store_id_and_document_type_and_folio", unique: true, where: "(folio IS NOT NULL)"
     t.index ["store_id"], name: "index_sales_on_store_id"
     t.index ["user_id"], name: "index_sales_on_user_id"
@@ -331,6 +337,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_06_003001) do
   add_foreign_key "sale_items", "sales"
   add_foreign_key "sales", "caf_ranges"
   add_foreign_key "sales", "customers"
+  add_foreign_key "sales", "sales", column: "references_sale_id"
   add_foreign_key "sales", "stores"
   add_foreign_key "sales", "users"
   add_foreign_key "stores", "companies"

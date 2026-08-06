@@ -1,7 +1,7 @@
 module Api
   module V1
     class SalesController < BaseController
-      before_action :set_sale, only: %i[show issue]
+      before_action :set_sale, only: %i[show issue credit_note]
 
       def index
         sales = company_sales.includes(:store, :user, sale_items: :product)
@@ -31,6 +31,20 @@ module Api
         render json: { sale: serialize_sale(@sale.reload) }
       end
 
+      # Nota de credito: unico mecanismo de correccion de un DTE emitido.
+      def credit_note
+        note = Sales::CreditNoteCreator.new(
+          sale: @sale,
+          user: current_user,
+          params: credit_note_params.to_h
+        ).call
+
+        render json: {
+          credit_note: serialize_sale(note.reload),
+          sale: serialize_sale(@sale.reload)
+        }, status: :created
+      end
+
       private
 
       def company_sales
@@ -39,6 +53,12 @@ module Api
 
       def set_sale
         @sale = company_sales.includes(:store, :user, sale_items: :product).find(params[:id])
+      end
+
+      def credit_note_params
+        return ActionController::Parameters.new({}).permit! unless params[:credit_note].present?
+
+        params.require(:credit_note).permit(:reason, :notes, :issue, items: %i[product_id quantity])
       end
 
       def sale_params

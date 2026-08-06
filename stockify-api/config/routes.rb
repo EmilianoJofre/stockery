@@ -23,6 +23,7 @@ Rails.application.routes.draw do
       resources :sales, only: [:index, :show, :create] do
         member do
           post :issue
+          post :credit_note
         end
       end
       resources :customers, only: [:index, :show, :create, :update]

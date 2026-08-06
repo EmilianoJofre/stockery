@@ -30,8 +30,12 @@ module Api
       def top_selling_products
         company_store_ids = current_company.stores.pluck(:id)
 
+        # Se excluyen las notas de credito y las ventas anuladas: unidades que
+        # se devolvieron no son unidades vendidas.
         rows = SaleItem.joins(:product, :sale)
-          .merge(Sale.completed.where(store_id: company_store_ids))
+          .merge(
+            Sale.completed.revenue_documents.not_annulled.where(store_id: company_store_ids)
+          )
           .group("products.id", "products.name", "products.sku")
           .select("products.name AS product_name, products.sku AS sku, SUM(sale_items.quantity) AS quantity_sold, SUM(sale_items.subtotal) AS revenue")
           .order("SUM(sale_items.quantity) DESC")

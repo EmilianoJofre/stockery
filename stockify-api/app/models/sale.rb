@@ -1,11 +1,16 @@
 class Sale < ApplicationRecord
   class Immutable < StandardError; end
 
+  # CodRef del SII para el bloque Referencia de una nota de credito.
+  REFERENCE_CODES = { annul: 1, fix_text: 2, fix_amounts: 3 }.freeze
+
   belongs_to :store
   belongs_to :user
   belongs_to :customer, optional: true
   belongs_to :caf_range, optional: true
+  belongs_to :references_sale, class_name: "Sale", optional: true
 
+  has_many :credit_notes, class_name: "Sale", foreign_key: :references_sale_id, dependent: :nullify
   has_many :sale_items, dependent: :destroy
 
   accepts_nested_attributes_for :sale_items
@@ -36,6 +41,30 @@ class Sale < ApplicationRecord
   # Una factura identifica al receptor; una boleta no lo exige.
   validates :customer, presence: { message: "es obligatorio para una factura" },
                        if: -> { document_factura? || document_factura_exenta? }
+  # El SII no acepta una nota de credito que no diga que documento corrige.
+  validates :references_sale, presence: { message: "es obligatorio en una nota de credito" },
+                              if: -> { document_nota_credito? }
+  validates :reference_code, inclusion: { in: REFERENCE_CODES.values },
+                             if: -> { document_nota_credito? }
+
+  # Documentos que suman ingresos: las notas de credito restan, no suman.
+  scope :revenue_documents, -> { where.not(document_type: document_types[:nota_credito]) }
+  scope :credit_note_documents, -> { where(document_type: document_types[:nota_credito]) }
+  scope :not_annulled, -> { where(annulled_at: nil) }
+
+  # Ingreso neto de un periodo.
+  #
+  # Se restan solo las notas de credito que NO anulan: las anulaciones ya se
+  # descuentan al excluir el documento anulado, y restarlas ademas contaria el
+  # mismo monto dos veces.
+  def self.net_revenue(scope)
+    gross = scope.completed.revenue_documents.not_annulled.sum(:total_amount)
+    credited = scope.completed.credit_note_documents
+      .where.not(reference_code: REFERENCE_CODES[:annul])
+      .sum(:total_amount)
+
+    (gross - credited).to_f.round(2)
+  end
 
   before_validation :assign_reference
   before_validation :calculate_amounts
@@ -48,6 +77,24 @@ class Sale < ApplicationRecord
 
   def issued?
     issued_at.present?
+  end
+
+  def annulled?
+    annulled_at.present?
+  end
+
+  def credit_note?
+    document_nota_credito?
+  end
+
+  # Cuanto queda por acreditar del documento: impide emitir notas de credito
+  # por mas de lo que se vendio.
+  def credited_amount
+    credit_notes.sum(:total_amount)
+  end
+
+  def creditable_amount
+    total_amount - credited_amount
   end
 
   # Emite el documento: reserva folio, lo congela y lo deja en cola para el

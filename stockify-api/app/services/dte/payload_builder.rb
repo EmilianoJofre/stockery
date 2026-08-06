@@ -19,7 +19,8 @@ module Dte
           "Receptor" => receptor,
           "Totales"  => totales
         },
-        "Detalle" => detalle
+        "Detalle"   => detalle,
+        "Referencia" => referencia
       }.compact
     end
 
@@ -72,6 +73,22 @@ module Dte
         "MntExe"   => sale.exempt_amount.to_i,
         "MntTotal" => sale.total_amount.to_i
       }
+    end
+
+    # Bloque obligatorio en una nota de credito: identifica el documento que
+    # corrige. Sin el, el SII la rechaza.
+    def referencia
+      origen = sale.references_sale
+      return nil if origen.blank?
+
+      [{
+        "NroLinRef" => 1,
+        "TpoDocRef" => Sale.document_types[origen.document_type],
+        "FolioRef"  => origen.folio,
+        "FchRef"    => origen.sold_on.to_s,
+        "CodRef"    => sale.reference_code,
+        "RazonRef"  => sale.reference_reason
+      }.compact]
     end
 
     def detalle

@@ -26,10 +26,13 @@ module Api
             total_products: current_company.products.count,
             active_stores: current_company.stores.active.count,
             low_stock_alerts: low_stock.size,
-            sales_month: Sale.where(store_id: company_store_ids)
-              .completed
-              .where(sold_on: Date.current.beginning_of_month..Date.current)
-              .sum(:total_amount).to_f.round(2),
+            # Ingreso NETO: excluye ventas anuladas y descuenta las notas de
+            # credito. Sumar `total_amount` a secas contaria las notas de
+            # credito como ingreso y seguiria contando lo anulado.
+            sales_month: Sale.net_revenue(
+              Sale.where(store_id: company_store_ids)
+                .where(sold_on: Date.current.beginning_of_month..Date.current)
+            ),
             purchases_month: Purchase.where(store_id: company_store_ids)
               .received
               .where(received_on: Date.current.beginning_of_month..Date.current)

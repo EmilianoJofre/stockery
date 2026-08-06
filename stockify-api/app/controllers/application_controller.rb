@@ -220,6 +220,18 @@ class ApplicationController < ActionController::API
       issued: sale.issued?,
       issued_at: sale.issued_at,
       sii_status: sale.sii_status,
+      annulled: sale.annulled?,
+      annulled_at: sale.annulled_at,
+      credit_note: sale.credit_note?,
+      references_sale: sale.references_sale && {
+        id: sale.references_sale.id,
+        reference: sale.references_sale.reference,
+        folio: sale.references_sale.folio,
+        document_type: sale.references_sale.document_type
+      },
+      reference_code: sale.reference_code,
+      reference_reason: sale.reference_reason,
+      creditable_amount: sale.credit_note? ? nil : sale.creditable_amount.to_f.round(2),
       net_amount: sale.net_amount.to_f.round(2),
       tax_amount: sale.tax_amount.to_f.round(2),
       exempt_amount: sale.exempt_amount.to_f.round(2),

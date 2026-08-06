@@ -113,6 +113,74 @@ class InventoryManager
     end
   end
 
+  # ─── Devolucion a los lotes de origen ───────────────────────────────────────
+  # Devuelve stock al lote EXACTO del que salio, en vez de crear un lote nuevo.
+  # Esto solo es posible porque cada movimiento guarda su `inventory_lot_id`:
+  # asi la mercaderia devuelta conserva su vencimiento real y no reaparece como
+  # si fuera fresca.
+  #
+  # Se recorre en orden inverso al consumo (lo ultimo que salio vuelve primero).
+  def self.restore_from_document!(document:, product:, store:, user:, quantity:,
+                                  reason: "sale", source: nil, note: nil)
+    quantity = quantity.to_i
+    raise Error, "La cantidad a devolver debe ser mayor que cero" unless quantity.positive?
+
+    ActiveRecord::Base.transaction do
+      pending = quantity
+
+      consumed_by_lot(document: document, product: product, store: store).each do |lot_id, net_taken|
+        break unless pending.positive?
+        next unless net_taken.positive?
+
+        lot = InventoryLot.lock.find(lot_id)
+        giving_back = [net_taken, pending].min
+
+        lot.update!(quantity_remaining: lot.quantity_remaining + giving_back)
+
+        InventoryMovement.create!(
+          product: product, store: store, user: user,
+          inventory_lot: lot, source: source,
+          quantity_change: giving_back,
+          unit_cost: lot.unit_cost,
+          reason: reason, note: note
+        )
+
+        pending -= giving_back
+      end
+
+      if pending.positive?
+        raise Error, "No se puede devolver #{quantity} de #{product.name}: el documento " \
+                     "original solo tiene #{quantity - pending} unidades pendientes de devolucion"
+      end
+
+      refresh_level!(product: product, store: store)
+    end
+  end
+
+  # Neto pendiente de devolucion por lote: lo que salio por el documento menos
+  # lo ya devuelto por sus notas de credito. Se agrupa sobre el ledger, que es
+  # la unica fuente confiable de que unidad salio de que lote.
+  #
+  # El orden es el inverso al del consumo (`MAX(id) DESC`): lo ultimo que salio
+  # es lo primero que vuelve, que es lo que corresponde al deshacer una venta.
+  def self.consumed_by_lot(document:, product:, store:)
+    sources = [document] + Array(document.try(:credit_notes))
+
+    scope = InventoryMovement
+      .where(product: product, store: store)
+      .where(source: sources)
+      .where.not(inventory_lot_id: nil)
+      .group(:inventory_lot_id)
+
+    net_by_lot = scope.sum(:quantity_change).transform_values { |net| -net }
+    last_touch = scope.maximum(:id)
+
+    net_by_lot
+      .sort_by { |lot_id, _net| -last_touch.fetch(lot_id, 0) }
+      .to_h
+  end
+  private_class_method :consumed_by_lot
+
   # Recalcula el cache de saldo desde los lotes, la unica fuente de verdad.
   def self.refresh_level!(product:, store:)
     total = InventoryLot.where(product: product, store: store).sum(:quantity_remaining)
