@@ -242,6 +242,43 @@ class ApplicationController < ActionController::API
     }
   end
 
+  # La api_key NUNCA se devuelve: solo si esta configurada. Una credencial que
+  # viaja de vuelta al navegador es una credencial filtrada.
+  def serialize_dte_setting(setting)
+    {
+      id: setting.id,
+      provider: setting.provider,
+      environment: setting.environment,
+      folio_strategy: setting.folio_strategy,
+      api_key_configured: setting.api_key_ciphertext.present?,
+      rut_emisor: setting.rut_emisor,
+      razon_social: setting.razon_social,
+      giro: setting.giro,
+      acteco: setting.acteco,
+      dir_origen: setting.dir_origen,
+      cmna_origen: setting.cmna_origen,
+      cdg_sii_sucur: setting.cdg_sii_sucur,
+      active: setting.active
+    }
+  end
+
+  def serialize_caf_range(range)
+    {
+      id: range.id,
+      document_type: range.document_type,
+      document_name: Sale.document_types.key(range.document_type) || "tipo #{range.document_type}",
+      range_start: range.range_start,
+      range_end: range.range_end,
+      next_folio: range.next_folio,
+      available_folios: range.available_folios,
+      exhausted: range.exhausted?,
+      expired: range.expired?,
+      authorized_on: range.authorized_on,
+      expires_on: range.expires_on,
+      active: range.active
+    }
+  end
+
   def serialize_customer(customer)
     {
       id: customer.id,

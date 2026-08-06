@@ -33,6 +33,12 @@ Rails.application.routes.draw do
         end
       end
 
+      # Configuracion de facturacion electronica (DTE) y folios CAF.
+      get   "billing/settings",       to: "billing#show"
+      put   "billing/settings",       to: "billing#update"
+      post  "billing/caf_ranges",     to: "billing#create_caf_range"
+      patch "billing/caf_ranges/:id", to: "billing#update_caf_range"
+
       get  "catalog/permissions", to: "catalog#permissions"
       get  "catalog/roles",       to: "catalog#roles"
 

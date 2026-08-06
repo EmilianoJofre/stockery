@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import {
   HiBars3BottomLeft,
   HiChartBarSquare,
+  HiDocumentText,
   HiCircleStack,
   HiCube,
   HiHomeModern,
@@ -26,6 +27,7 @@ const CORE_MODULES = [
 
 const ADMIN_MODULES = [
   { to: "/users", label: "Usuarios", icon: HiUserGroup, permission: "users.view" },
+  { to: "/billing", label: "Facturacion", icon: HiDocumentText, permission: "billing.manage" },
 ];
 
 function getUserInitials(user) {

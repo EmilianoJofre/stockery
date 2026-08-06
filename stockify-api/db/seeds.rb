@@ -53,6 +53,9 @@ PERMISSION_MATRIX = {
     "users.create" => "Crear nuevos usuarios",
     "users.edit"   => "Editar usuarios y permisos",
     "users.delete" => "Desactivar usuarios"
+  },
+  "Facturación" => {
+    "billing.manage" => "Configurar facturación electrónica y folios"
   }
 }.freeze
 
