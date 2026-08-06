@@ -10,9 +10,27 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_06_000004) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_06_001004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "caf_ranges", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.integer "document_type", null: false
+    t.integer "range_start", null: false
+    t.integer "range_end", null: false
+    t.integer "next_folio", null: false
+    t.date "authorized_on"
+    t.date "expires_on"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "document_type", "active"], name: "index_caf_ranges_on_company_id_and_document_type_and_active"
+    t.index ["company_id"], name: "index_caf_ranges_on_company_id"
+    t.check_constraint "next_folio <= (range_end + 1)", name: "chk_caf_next_folio_upper"
+    t.check_constraint "next_folio >= range_start", name: "chk_caf_next_folio_lower"
+    t.check_constraint "range_end >= range_start", name: "chk_caf_range_order"
+  end
 
   create_table "companies", force: :cascade do |t|
     t.string "name", null: false
@@ -21,6 +39,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_06_000004) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_companies_on_slug", unique: true
+  end
+
+  create_table "customers", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "rut"
+    t.string "name", null: false
+    t.string "giro"
+    t.string "email"
+    t.string "phone"
+    t.string "address"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "name"], name: "index_customers_on_company_id_and_name"
+    t.index ["company_id", "rut"], name: "index_customers_on_company_id_and_rut", unique: true, where: "(rut IS NOT NULL)"
+    t.index ["company_id"], name: "index_customers_on_company_id"
   end
 
   create_table "inventory_levels", force: :cascade do |t|
@@ -113,6 +147,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_06_000004) do
     t.datetime "updated_at", null: false
     t.bigint "company_id", null: false
     t.bigint "product_category_id"
+    t.boolean "tax_exempt", default: false, null: false
     t.index ["company_id"], name: "index_products_on_company_id"
     t.index ["product_category_id"], name: "index_products_on_product_category_id"
     t.index ["sku"], name: "index_products_on_sku", unique: true
@@ -166,6 +201,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_06_000004) do
     t.decimal "subtotal", precision: 12, scale: 2, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "tax_exempt", default: false, null: false
     t.index ["product_id"], name: "index_sale_items_on_product_id"
     t.index ["sale_id"], name: "index_sale_items_on_sale_id"
   end
@@ -181,7 +217,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_06_000004) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "document_type", default: 39, null: false
+    t.decimal "net_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "tax_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "exempt_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "tax_rate", precision: 5, scale: 4, default: "0.19", null: false
+    t.integer "folio"
+    t.bigint "caf_range_id"
+    t.datetime "issued_at"
+    t.integer "sii_status", default: 0, null: false
+    t.string "sii_track_id"
+    t.bigint "customer_id"
+    t.index ["caf_range_id"], name: "index_sales_on_caf_range_id"
+    t.index ["customer_id"], name: "index_sales_on_customer_id"
+    t.index ["issued_at"], name: "index_sales_on_issued_at"
     t.index ["reference"], name: "index_sales_on_reference", unique: true
+    t.index ["store_id", "document_type", "folio"], name: "index_sales_on_store_id_and_document_type_and_folio", unique: true, where: "(folio IS NOT NULL)"
     t.index ["store_id"], name: "index_sales_on_store_id"
     t.index ["user_id"], name: "index_sales_on_user_id"
   end
@@ -235,6 +286,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_06_000004) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "caf_ranges", "companies"
+  add_foreign_key "customers", "companies"
   add_foreign_key "inventory_levels", "products"
   add_foreign_key "inventory_levels", "stores"
   add_foreign_key "inventory_lots", "companies"
@@ -256,6 +309,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_06_000004) do
   add_foreign_key "role_permissions", "permissions"
   add_foreign_key "sale_items", "products"
   add_foreign_key "sale_items", "sales"
+  add_foreign_key "sales", "caf_ranges"
+  add_foreign_key "sales", "customers"
   add_foreign_key "sales", "stores"
   add_foreign_key "sales", "users"
   add_foreign_key "stores", "companies"

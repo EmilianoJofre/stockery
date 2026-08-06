@@ -4,6 +4,7 @@ puts "Cargando workspace demo de Stockery..."
   SaleItem, Sale,
   InventoryMovement, InventoryLot, InventoryLevel,
   PurchaseItem, Purchase,
+  CafRange, Customer,
   Product, ProductCategory, Supplier, Store,
   UserPermission, User,
   RolePermission, Permission,
@@ -354,6 +355,36 @@ InventoryManager.adjust!(
   )
 end
 
+# ─── Documentos tributarios (DTE) ─────────────────────────────────────────────
+# Rangos de folios como los que entrega el SII en un CAF. Son de demo: no
+# corresponden a una autorizacion real.
+
+[
+  { type: 39, from: 1,   to: 500, label: "boleta electronica" },
+  { type: 33, from: 100, to: 200, label: "factura electronica" },
+  { type: 61, from: 1,   to: 50,  label: "nota de credito" }
+].each do |caf|
+  company.caf_ranges.create!(
+    document_type: caf[:type],
+    range_start:   caf[:from],
+    range_end:     caf[:to],
+    next_folio:    caf[:from],
+    authorized_on: Date.current - 30,
+    expires_on:    Date.current + 180
+  )
+end
+
+# Clientes con RUT valido (digito verificador real), para poder emitir facturas.
+[
+  { rut: "76192083-9", name: "Comercial Los Andes SpA", giro: "Comercio al por menor",
+    email: "pagos@losandes.cl", address: "Av. Providencia 1234, Providencia" },
+  { rut: "5126663-3",  name: "Rosa Fuentes Miranda", giro: "Almacen de barrio",
+    email: "rosa.fuentes@gmail.com", address: "Pasaje Los Lirios 45, La Florida" }
+].each { |attrs| company.customers.create!(attrs) }
+
+# Un producto exento de IVA, para que el desglose neto/IVA/exento sea observable.
+by_sku["FOS-001"]&.update!(tax_exempt: true)
+
 puts "Carga demo completada:"
 puts "  Compania:    #{Company.count}"
 puts "  Usuarios:    #{User.count}"
@@ -364,6 +395,9 @@ puts "  Productos:   #{Product.count} (#{Product.count / ProductCategory.count.t
 puts "  Permisos:    #{Permission.count}"
 puts "  Compras:     #{Purchase.count}"
 puts "  Ventas:      #{Sale.count}"
+puts "  Clientes:    #{Customer.count}"
+puts "  Rangos CAF:  #{CafRange.count}"
+puts "  Lotes:       #{InventoryLot.count} (#{InventoryLot.perishable.count} con vencimiento)"
 puts ""
 puts "Emails de acceso demo:"
 puts "  owner@demo.stockery.app   / Stockify123!"

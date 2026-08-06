@@ -1,7 +1,7 @@
 module Api
   module V1
     class SalesController < BaseController
-      before_action :set_sale, only: [:show]
+      before_action :set_sale, only: %i[show issue]
 
       def index
         sales = company_sales.includes(:store, :user, sale_items: :product)
@@ -25,6 +25,12 @@ module Api
         render json: { sale: serialize_sale(sale.reload) }, status: :created
       end
 
+      # Emite el DTE: asigna folio del CAF vigente y congela el documento.
+      def issue
+        @sale.issue!
+        render json: { sale: serialize_sale(@sale.reload) }
+      end
+
       private
 
       def company_sales
@@ -36,7 +42,12 @@ module Api
       end
 
       def sale_params
-        params.require(:sale).permit(:store_id, :status, :reference, :sold_on, :customer_name, :notes, items: [:product_id, :quantity, :unit_price])
+        params.require(:sale).permit(
+          :store_id, :status, :reference, :sold_on, :notes,
+          :document_type, :issue,
+          :customer_id, :customer_name, :customer_rut, :customer_email, :customer_giro,
+          items: %i[product_id quantity unit_price]
+        )
       end
     end
   end

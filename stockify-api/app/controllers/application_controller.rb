@@ -5,6 +5,10 @@ class ApplicationController < ActionController::API
   rescue_from ActiveRecord::RecordInvalid, with: :render_unprocessable_entity
   rescue_from ActionController::ParameterMissing, with: :render_parameter_missing
   rescue_from InventoryManager::Error, with: :render_domain_error
+  # Errores de dominio tributario: intentar editar un DTE emitido o quedarse sin
+  # folios son condiciones esperables, no fallas del servidor.
+  rescue_from Sale::Immutable, with: :render_domain_error
+  rescue_from CafRange::Exhausted, with: :render_domain_error
 
   private
 
@@ -206,6 +210,18 @@ class ApplicationController < ActionController::API
       customer_name: sale.customer_name,
       total_amount: sale.total_amount.to_f.round(2),
       notes: sale.notes,
+      # ─── Documento tributario ───
+      document_type: sale.document_type,
+      document_code: Sale.document_types[sale.document_type],
+      folio: sale.folio,
+      issued: sale.issued?,
+      issued_at: sale.issued_at,
+      sii_status: sale.sii_status,
+      net_amount: sale.net_amount.to_f.round(2),
+      tax_amount: sale.tax_amount.to_f.round(2),
+      exempt_amount: sale.exempt_amount.to_f.round(2),
+      tax_rate: sale.tax_rate.to_f,
+      customer: sale.customer && serialize_customer(sale.customer),
       store: serialize_store(sale.store),
       user: serialize_user(sale.user),
       items: sale.sale_items.map do |item|
@@ -216,9 +232,24 @@ class ApplicationController < ActionController::API
           sku: item.product.sku,
           quantity: item.quantity,
           unit_price: item.unit_price.to_f.round(2),
-          subtotal: item.subtotal.to_f.round(2)
+          subtotal: item.subtotal.to_f.round(2),
+          tax_exempt: item.tax_exempt
         }
       end
+    }
+  end
+
+  def serialize_customer(customer)
+    {
+      id: customer.id,
+      rut: customer.rut,
+      formatted_rut: customer.formatted_rut,
+      name: customer.name,
+      giro: customer.giro,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      active: customer.active
     }
   end
 

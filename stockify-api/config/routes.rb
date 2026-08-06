@@ -20,7 +20,12 @@ Rails.application.routes.draw do
       resources :product_categories, only: [:index, :create, :update]
       resources :suppliers
       resources :purchases, only: [:index, :show, :create]
-      resources :sales, only: [:index, :show, :create]
+      resources :sales, only: [:index, :show, :create] do
+        member do
+          post :issue
+        end
+      end
+      resources :customers, only: [:index, :show, :create, :update]
 
       resources :users, only: [:index, :show, :create, :update, :destroy] do
         member do
