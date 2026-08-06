@@ -72,6 +72,31 @@ Servicios:
 - API: `http://127.0.0.1:3001`
 - PostgreSQL: `localhost:5432`
 
+### Puertos alternativos
+
+Si esos puertos estan ocupados (5432 suele estar tomado por un PostgreSQL
+nativo), existe un override con puertos altos:
+
+```bash
+docker compose -f docker/compose.yml -f docker/compose.localports.yml up -d
+```
+
+- Frontend: `http://127.0.0.1:5180`
+- API: `http://127.0.0.1:3010`
+- PostgreSQL: `localhost:55432`
+
+Nota: Compose *concatena* las listas de `ports` en un override, no las
+reemplaza. Por eso el archivo usa el tag `!override`.
+
+### Trabajar contra la base de produccion
+
+`docker/compose.prodlink.yml` apunta la aplicacion local a la base de
+produccion a traves de un tunel SSH que corre **dentro de un contenedor**, de
+modo que la base nunca queda expuesta al host ni a la red local. El propio
+archivo documenta como generar el `.env.prodlink` que necesita.
+
+**Nunca correr migraciones con ese override activo**: apuntan a produccion.
+
 El script de arranque de la API prepara la base de datos y carga datos demo solo cuando aun no existen usuarios.
 
 ## Produccion en Lightsail

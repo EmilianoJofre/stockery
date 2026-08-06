@@ -1,0 +1,14 @@
+services:
+  postgres:
+    ports: !override
+      - "55432:5432"
+
+  api:
+    environment:
+      FRONTEND_ORIGINS: http://localhost:5180,http://127.0.0.1:5180
+    ports: !override
+      - "3010:3000"
+
+  web:
+    ports: !override
+      - "5180:5174"

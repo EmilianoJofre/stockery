@@ -1,0 +1,80 @@
+# Local app  ──►  PRODUCCION DB (stockery.cl) via tunel SSH en contenedor.
+# El tunel bindea SOLO dentro de la red de compose: la DB de prod no queda
+# expuesta al host ni a la LAN.
+#
+# Uso:
+#   docker compose -f docker/compose.yml -f docker/compose.prodlink.yml \
+#     --env-file .env.prodlink up -d tunnel api web
+#
+# El archivo .env.prodlink NO esta en git (contiene la password de produccion).
+# Se regenera desde el servidor con:
+#   ssh stockery-prod 'cd /opt/stockery && \
+#     grep -E "^(POSTGRES_USER|POSTGRES_PASSWORD|POSTGRES_DB|JWT_SECRET)=" .env.production' \
+#     > .env.prodlink && chmod 600 .env.prodlink
+#
+# Y agregarle los datos del servidor (este repo es publico: no van aca):
+#   PROD_SSH_USER=...
+#   PROD_SSH_HOST=...        # IP de la instancia
+#   PROD_DB_HOST=...         # IP del contenedor postgres en la red docker,
+#                            # via: docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" docker-postgres-1
+#
+# ADVERTENCIA: esto apunta la app local a la base de PRODUCCION en modo
+# lectura-escritura. NUNCA correr migraciones con este override activo.
+#
+# NOTA: 'postgres' (el local) queda fuera a proposito. Se selecciona
+# explicitamente tunnel/api/web y se hace !override de depends_on.
+
+services:
+  tunnel:
+    image: alpine:3.20
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache openssh-client netcat-openbsd >/dev/null 2>&1
+        install -m 600 /keys/key.pem /tmp/key.pem
+        echo "[tunnel] abriendo 5432 -> $${PROD_DB_HOST}:5432"
+        exec ssh -i /tmp/key.pem -N \
+          -o StrictHostKeyChecking=accept-new \
+          -o UserKnownHostsFile=/tmp/known_hosts \
+          -o ServerAliveInterval=30 \
+          -o ServerAliveCountMax=3 \
+          -o ExitOnForwardFailure=yes \
+          -L "0.0.0.0:5432:$${PROD_DB_HOST}:5432" \
+          "$${PROD_SSH_USER}@$${PROD_SSH_HOST}"
+    environment:
+      PROD_SSH_USER: ${PROD_SSH_USER}
+      PROD_SSH_HOST: ${PROD_SSH_HOST}
+      PROD_DB_HOST: ${PROD_DB_HOST}
+    volumes:
+      - ${PROD_SSH_KEY:-~/.ssh/lightsail.pem}:/keys/key.pem:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 5432 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    # !override reemplaza api-start.sh, que corre `db:prepare` y `db:seed`.
+    # Contra produccion eso migraria/sembraria datos reales. Solo arrancamos Puma.
+    command: !override ["bundle", "exec", "rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+    depends_on: !override
+      tunnel:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: tunnel
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_ORIGINS: http://localhost:5180,http://127.0.0.1:5180
+    ports: !override
+      - "3010:3000"
+
+  web:
+    depends_on: !override
+      - api
+    ports: !override
+      - "5180:5174"
