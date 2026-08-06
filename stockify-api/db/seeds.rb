@@ -1,8 +1,9 @@
 puts "Cargando workspace demo de Stockery..."
 
 [
-  SaleItem, Sale, PurchaseItem, Purchase,
-  InventoryAdjustment, InventoryLevel,
+  SaleItem, Sale,
+  InventoryMovement, InventoryLot, InventoryLevel,
+  PurchaseItem, Purchase,
   Product, ProductCategory, Supplier, Store,
   UserPermission, User,
   RolePermission, Permission,
@@ -327,6 +328,31 @@ InventoryManager.adjust!(
   quantity_change: 6, reason: "restock",
   note: "Reposición urgente de congelados"
 )
+
+# ─── Lotes con vencimiento ────────────────────────────────────────────────────
+# Entradas perecibles escalonadas para que el orden FEFO y la alerta de
+# vencimiento sean observables en la demo.
+
+[
+  { sku: "LEC-001", days:  5, qty: 12, cost:   790, lot: "L-2608-A" },
+  { sku: "LEC-001", days: 21, qty: 18, cost:   810, lot: "L-2608-B" },
+  { sku: "JAM-001", days:  3, qty:  8, cost:   890, lot: "J-2608-A" },
+  { sku: "JAM-001", days: 14, qty: 10, cost:   910, lot: "J-2608-B" },
+  { sku: "HUE-001", days: 30, qty: 24, cost: 2_390, lot: "H-2608-A" },
+  { sku: "HEL-001", days: -2, qty:  4, cost: 2_490, lot: "C-2607-X" }
+].each do |entry|
+  InventoryManager.receive!(
+    product:     by_sku[entry[:sku]],
+    store:       store,
+    user:        manager,
+    quantity:    entry[:qty],
+    unit_cost:   entry[:cost],
+    expiry_date: Date.current + entry[:days],
+    lot_code:    entry[:lot],
+    reason:      "restock",
+    note:        entry[:days].negative? ? "Lote vencido pendiente de retiro" : "Lote perecible recibido"
+  )
+end
 
 puts "Carga demo completada:"
 puts "  Compania:    #{Company.count}"

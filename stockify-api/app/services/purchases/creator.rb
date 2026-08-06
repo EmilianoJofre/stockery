@@ -44,22 +44,30 @@ module Purchases
 
       items.each do |item|
         purchase.purchase_items.build(
-          product_id: item[:product_id],
-          quantity:   item[:quantity],
-          unit_cost:  item[:unit_cost]
+          product_id:  item[:product_id],
+          quantity:    item[:quantity],
+          unit_cost:   item[:unit_cost],
+          lot_code:    item[:lot_code],
+          expiry_date: item[:expiry_date]
         )
       end
     end
 
     def receive_inventory!(purchase)
       purchase.purchase_items.each do |item|
-        InventoryManager.adjust!(
-          product:         item.product,
-          store:           purchase.store,
-          user:            @user,
-          quantity_change: item.quantity,
-          reason:          "purchase",
-          note:            "Recibido por #{purchase.reference}"
+        InventoryManager.receive!(
+          product:       item.product,
+          store:         purchase.store,
+          user:          @user,
+          quantity:      item.quantity,
+          unit_cost:     item.unit_cost,
+          expiry_date:   item.expiry_date,
+          lot_code:      item.lot_code,
+          received_on:   purchase.received_on,
+          reason:        "purchase",
+          source:        purchase,
+          purchase_item: item,
+          note:          "Recibido por #{purchase.reference}"
         )
       end
     end

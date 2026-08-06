@@ -55,13 +55,14 @@ module Sales
 
     def commit_inventory!(sale)
       sale.sale_items.each do |item|
-        InventoryManager.adjust!(
-          product:         item.product,
-          store:           sale.store,
-          user:            @user,
-          quantity_change: -item.quantity,
-          reason:          "sale",
-          note:            "Vendido por #{sale.reference}"
+        InventoryManager.issue!(
+          product:  item.product,
+          store:    sale.store,
+          user:     @user,
+          quantity: item.quantity,
+          reason:   "sale",
+          source:   sale,
+          note:     "Vendido por #{sale.reference}"
         )
       end
     end

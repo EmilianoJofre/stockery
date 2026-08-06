@@ -33,6 +33,7 @@ Rails.application.routes.draw do
 
       get  "inventory",              to: "inventory#index"
       get  "inventory/adjustments",  to: "inventory#adjustments"
+      get  "inventory/lots",         to: "inventory#lots"
       post "inventory/adjust",       to: "inventory#adjust"
 
       get "reports/stock_levels(.:format)",         to: "reports#stock_levels"

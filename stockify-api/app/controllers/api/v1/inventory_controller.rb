@@ -31,6 +31,27 @@ module Api
         render json: { adjustments: recent_adjustment_payload(limit: 25) }
       end
 
+      # Lotes con saldo. `expiring_within` (dias) es la base del insight
+      # "que productos van a vencer".
+      def lots
+        lots = InventoryLot.available
+          .includes(:product, :store)
+          .joins(:product)
+          .where(products: { company_id: current_company.id })
+
+        lots = lots.where(store_id: params[:store_id]) if params[:store_id].present?
+        lots = lots.where(product_id: params[:product_id]) if params[:product_id].present?
+
+        if params[:expiring_within].present?
+          horizon = Date.current + params[:expiring_within].to_i.days
+          lots = lots.expiring_on_or_before(horizon)
+        end
+
+        lots = lots.expired if params[:expired] == "true"
+
+        render json: { lots: lots.fefo.limit(200).map { |lot| serialize_inventory_lot(lot) } }
+      end
+
       def adjust
         product = current_company.products.find(adjust_params[:product_id])
         store_id = adjust_params[:store_id].presence || current_company.default_store&.id
@@ -56,12 +77,12 @@ module Api
       end
 
       def recent_adjustment_payload(limit: 10)
-        InventoryAdjustment.includes(:product, :store, :user)
+        InventoryMovement.includes(:product, :store, :user, :inventory_lot)
           .joins(:product)
           .where(products: { company_id: current_company.id })
-          .order(created_at: :desc)
+          .recent_first
           .limit(limit)
-          .map { |adjustment| serialize_adjustment(adjustment) }
+          .map { |movement| serialize_adjustment(movement) }
       end
 
       def adjust_params

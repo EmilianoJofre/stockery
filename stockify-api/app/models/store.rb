@@ -2,7 +2,8 @@ class Store < ApplicationRecord
   belongs_to :company
 
   has_many :inventory_levels
-  has_many :inventory_adjustments
+  has_many :inventory_movements
+  has_many :inventory_lots
   has_many :purchases
   has_many :sales
 

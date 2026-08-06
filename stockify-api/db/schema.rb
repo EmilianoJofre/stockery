@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_04_18_000003) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_06_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -23,20 +23,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_18_000003) do
     t.index ["slug"], name: "index_companies_on_slug", unique: true
   end
 
-  create_table "inventory_adjustments", force: :cascade do |t|
-    t.bigint "product_id", null: false
-    t.bigint "store_id", null: false
-    t.bigint "user_id", null: false
-    t.integer "quantity_change", null: false
-    t.string "reason", null: false
-    t.text "note"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["product_id"], name: "index_inventory_adjustments_on_product_id"
-    t.index ["store_id"], name: "index_inventory_adjustments_on_store_id"
-    t.index ["user_id"], name: "index_inventory_adjustments_on_user_id"
-  end
-
   create_table "inventory_levels", force: :cascade do |t|
     t.bigint "product_id", null: false
     t.bigint "store_id", null: false
@@ -46,6 +32,52 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_18_000003) do
     t.index ["product_id", "store_id"], name: "index_inventory_levels_on_product_id_and_store_id", unique: true
     t.index ["product_id"], name: "index_inventory_levels_on_product_id"
     t.index ["store_id"], name: "index_inventory_levels_on_store_id"
+  end
+
+  create_table "inventory_lots", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.bigint "product_id", null: false
+    t.bigint "store_id", null: false
+    t.bigint "purchase_item_id"
+    t.string "lot_code"
+    t.date "expiry_date"
+    t.date "received_on", null: false
+    t.decimal "unit_cost", precision: 10, scale: 2, default: "0.0", null: false
+    t.integer "quantity_received", default: 0, null: false
+    t.integer "quantity_remaining", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_inventory_lots_on_company_id"
+    t.index ["product_id", "store_id", "expiry_date", "received_on", "id"], name: "index_inventory_lots_fefo"
+    t.index ["product_id", "store_id"], name: "index_inventory_lots_available", where: "(quantity_remaining > 0)"
+    t.index ["product_id"], name: "index_inventory_lots_on_product_id"
+    t.index ["purchase_item_id"], name: "index_inventory_lots_on_purchase_item_id"
+    t.index ["store_id"], name: "index_inventory_lots_on_store_id"
+    t.check_constraint "quantity_received >= 0", name: "chk_lots_received_non_negative"
+    t.check_constraint "quantity_remaining <= quantity_received", name: "chk_lots_remaining_lte_received"
+    t.check_constraint "quantity_remaining >= 0", name: "chk_lots_remaining_non_negative"
+  end
+
+  create_table "inventory_movements", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.bigint "store_id", null: false
+    t.bigint "user_id", null: false
+    t.integer "quantity_change", null: false
+    t.string "reason", null: false
+    t.text "note"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "inventory_lot_id"
+    t.string "source_type"
+    t.bigint "source_id"
+    t.decimal "unit_cost", precision: 10, scale: 2
+    t.index ["inventory_lot_id"], name: "index_inventory_movements_on_inventory_lot_id"
+    t.index ["product_id", "store_id", "created_at"], name: "index_inventory_movements_on_product_store_time"
+    t.index ["product_id"], name: "index_inventory_movements_on_product_id"
+    t.index ["source_type", "source_id"], name: "index_inventory_movements_on_source"
+    t.index ["store_id"], name: "index_inventory_movements_on_store_id"
+    t.index ["user_id"], name: "index_inventory_movements_on_user_id"
+    t.check_constraint "quantity_change <> 0", name: "chk_movements_quantity_change_not_zero"
   end
 
   create_table "permissions", force: :cascade do |t|
@@ -94,6 +126,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_18_000003) do
     t.decimal "subtotal", precision: 12, scale: 2, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "lot_code"
+    t.date "expiry_date"
     t.index ["product_id"], name: "index_purchase_items_on_product_id"
     t.index ["purchase_id"], name: "index_purchase_items_on_purchase_id"
   end
@@ -201,11 +235,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_18_000003) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
-  add_foreign_key "inventory_adjustments", "products"
-  add_foreign_key "inventory_adjustments", "stores"
-  add_foreign_key "inventory_adjustments", "users"
   add_foreign_key "inventory_levels", "products"
   add_foreign_key "inventory_levels", "stores"
+  add_foreign_key "inventory_lots", "companies"
+  add_foreign_key "inventory_lots", "products"
+  add_foreign_key "inventory_lots", "purchase_items"
+  add_foreign_key "inventory_lots", "stores"
+  add_foreign_key "inventory_movements", "inventory_lots"
+  add_foreign_key "inventory_movements", "products"
+  add_foreign_key "inventory_movements", "stores"
+  add_foreign_key "inventory_movements", "users"
   add_foreign_key "product_categories", "companies"
   add_foreign_key "products", "companies"
   add_foreign_key "products", "product_categories"

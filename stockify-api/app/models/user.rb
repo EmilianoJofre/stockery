@@ -2,7 +2,7 @@ class User < ApplicationRecord
   has_secure_password
 
   belongs_to :company
-  has_many :inventory_adjustments
+  has_many :inventory_movements
   has_many :purchases
   has_many :sales
   has_many :user_permissions, dependent: :destroy

@@ -135,17 +135,40 @@ class ApplicationController < ActionController::API
     }
   end
 
-  def serialize_adjustment(adjustment)
+  # Serializa un InventoryMovement. Conserva las claves previas para no romper
+  # el frontend, y agrega la trazabilidad del lote de origen.
+  def serialize_adjustment(movement)
     {
-      id: adjustment.id,
-      product_name: adjustment.product.name,
-      sku: adjustment.product.sku,
-      store_name: adjustment.store.name,
-      actor_name: adjustment.user.name,
-      quantity_change: adjustment.quantity_change,
-      reason: adjustment.reason,
-      note: adjustment.note,
-      created_at: adjustment.created_at
+      id: movement.id,
+      product_name: movement.product.name,
+      sku: movement.product.sku,
+      store_name: movement.store.name,
+      actor_name: movement.user.name,
+      quantity_change: movement.quantity_change,
+      reason: movement.reason,
+      note: movement.note,
+      lot_code: movement.inventory_lot&.lot_code,
+      expiry_date: movement.inventory_lot&.expiry_date,
+      created_at: movement.created_at
+    }
+  end
+
+  def serialize_inventory_lot(lot)
+    {
+      id: lot.id,
+      product_id: lot.product_id,
+      product_name: lot.product.name,
+      sku: lot.product.sku,
+      store_id: lot.store_id,
+      store_name: lot.store.name,
+      lot_code: lot.lot_code,
+      expiry_date: lot.expiry_date,
+      days_to_expiry: lot.days_to_expiry,
+      expired: lot.expired?,
+      received_on: lot.received_on,
+      unit_cost: lot.unit_cost.to_f.round(2),
+      quantity_received: lot.quantity_received,
+      quantity_remaining: lot.quantity_remaining
     }
   end
 

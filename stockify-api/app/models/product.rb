@@ -3,7 +3,8 @@ class Product < ApplicationRecord
   belongs_to :product_category, optional: true
 
   has_many :inventory_levels
-  has_many :inventory_adjustments
+  has_many :inventory_movements
+  has_many :inventory_lots
   has_many :purchase_items
   has_many :sale_items
 

@@ -39,7 +39,10 @@ module Api
       end
 
       def purchase_params
-        params.require(:purchase).permit(:supplier_id, :store_id, :status, :reference, :received_on, :notes, items: [:product_id, :quantity, :unit_cost])
+        params.require(:purchase).permit(
+          :supplier_id, :store_id, :status, :reference, :received_on, :notes,
+          items: %i[product_id quantity unit_cost lot_code expiry_date]
+        )
       end
     end
   end
