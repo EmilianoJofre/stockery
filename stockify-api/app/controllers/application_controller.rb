@@ -109,6 +109,8 @@ class ApplicationController < ActionController::API
       price: product.price.to_f.round(2),
       low_stock_threshold: product.low_stock_threshold,
       active: product.active,
+      # Necesario en el frontend para calcular el desglose neto/IVA/exento en vivo.
+      tax_exempt: product.tax_exempt,
       product_category_id: product.product_category_id,
       product_category: product.product_category ? serialize_product_category(product.product_category) : nil,
       inventory_total: product.inventory_total,

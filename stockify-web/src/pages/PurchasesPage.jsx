@@ -22,7 +22,7 @@ const EMPTY_PURCHASE = {
   status: "received",
   received_on: new Date().toISOString().slice(0, 10),
   notes: "",
-  items: [{ product_id: "", quantity: 1, unit_cost: "" }],
+  items: [{ product_id: "", quantity: 1, unit_cost: "", lot_code: "", expiry_date: "" }],
 };
 
 export default function PurchasesPage() {
@@ -91,7 +91,7 @@ export default function PurchasesPage() {
   }
 
   function addItem() {
-    setPurchaseForm((f) => ({ ...f, items: [...f.items, { product_id: "", quantity: 1, unit_cost: "" }] }));
+    setPurchaseForm((f) => ({ ...f, items: [...f.items, { product_id: "", quantity: 1, unit_cost: "", lot_code: "", expiry_date: "" }] }));
     setPurchaseDirty(true);
   }
 
@@ -378,40 +378,61 @@ export default function PurchasesPage() {
             </div>
             <div className="space-y-2">
               {purchaseForm.items.map((item, index) => (
-                <div key={`purchase-item-${index}`} className="grid gap-2 rounded-2xl border border-line bg-cloud/60 p-3 md:grid-cols-[1.6fr_0.6fr_0.8fr_auto]">
-                  <select
-                    className="input-field"
-                    value={item.product_id}
-                    onChange={(e) => updateItem(index, "product_id", e.target.value)}
-                  >
-                    <option value="">Producto</option>
-                    {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
-                  </select>
-                  <input
-                    className="input-field"
-                    min="1"
-                    placeholder="Cant."
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(index, "quantity", e.target.value)}
-                  />
-                  <input
-                    className="input-field"
-                    min="0"
-                    placeholder="Costo $"
-                    step="1"
-                    type="number"
-                    value={item.unit_cost}
-                    onChange={(e) => updateItem(index, "unit_cost", e.target.value)}
-                  />
-                  <button
-                    className="btn-ghost h-12 px-3 text-sm disabled:opacity-40"
-                    disabled={purchaseForm.items.length === 1}
-                    onClick={() => removeItem(index)}
-                    type="button"
-                  >
-                    Quitar
-                  </button>
+                <div key={`purchase-item-${index}`} className="space-y-2 rounded-2xl border border-line bg-cloud/60 p-3">
+                  <div className="grid gap-2 md:grid-cols-[1.6fr_0.6fr_0.8fr_auto]">
+                    <select
+                      className="input-field"
+                      value={item.product_id}
+                      onChange={(e) => updateItem(index, "product_id", e.target.value)}
+                    >
+                      <option value="">Producto</option>
+                      {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
+                    </select>
+                    <input
+                      className="input-field"
+                      min="1"
+                      placeholder="Cant."
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                    />
+                    <input
+                      className="input-field"
+                      min="0"
+                      placeholder="Costo $"
+                      step="1"
+                      type="number"
+                      value={item.unit_cost}
+                      onChange={(e) => updateItem(index, "unit_cost", e.target.value)}
+                    />
+                    <button
+                      className="btn-ghost h-12 px-3 text-sm disabled:opacity-40"
+                      disabled={purchaseForm.items.length === 1}
+                      onClick={() => removeItem(index)}
+                      type="button"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                  {/* Recibir la compra crea un lote: aca se captura su trazabilidad. */}
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <input
+                      className="input-field"
+                      placeholder="N° de lote (opcional)"
+                      value={item.lot_code}
+                      onChange={(e) => updateItem(index, "lot_code", e.target.value)}
+                    />
+                    <div>
+                      <input
+                        className="input-field"
+                        placeholder="Vencimiento"
+                        type="date"
+                        value={item.expiry_date}
+                        onChange={(e) => updateItem(index, "expiry_date", e.target.value)}
+                      />
+                      <p className="mt-1 text-xs text-muted">Déjalo vacío si no es perecible</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

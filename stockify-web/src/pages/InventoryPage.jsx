@@ -7,8 +7,9 @@ import SectionCard from "../components/SectionCard";
 import { useAuth } from "../context/AuthContext";
 import { can } from "../lib/permissions";
 import { apiRequest } from "../lib/api";
-import { formatDate } from "../lib/format";
+import { formatCurrency, formatDate } from "../lib/format";
 import { translateAdjustmentReason } from "../lib/translations";
+import { EXPIRY_HORIZONS, expiryStatus, summarizeLots } from "../lib/expiry";
 
 const EMPTY_ADJUSTMENT = {
   product_id: "",
@@ -42,8 +43,13 @@ export default function InventoryPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
+  const [lots, setLots] = useState([]);
+  const [horizon, setHorizon] = useState(30);
+  const [lotsLoading, setLotsLoading] = useState(true);
+
   useEffect(() => { loadLookups(); }, []);
   useEffect(() => { loadInventory(); }, [deferredSearch, storeId, lowStockOnly, selectedCategories]);
+  useEffect(() => { loadLots(); }, [horizon, storeId]);
 
   async function loadLookups() {
     try {
@@ -78,6 +84,36 @@ export default function InventoryPage() {
       setLoading(false);
     }
   }
+
+  // Los lotes vencidos se piden sin filtro de horizonte: `expiring_within` mira
+  // hacia adelante, asi que un lote ya vencido no cae en esa ventana.
+  async function loadLots() {
+    setLotsLoading(true);
+    try {
+      const query = new URLSearchParams({ expiring_within: String(horizon) });
+      if (storeId) query.set("store_id", storeId);
+
+      const expiredQuery = new URLSearchParams({ expired: "true" });
+      if (storeId) expiredQuery.set("store_id", storeId);
+
+      const [upcoming, expired] = await Promise.all([
+        apiRequest(`/api/v1/inventory/lots?${query}`),
+        apiRequest(`/api/v1/inventory/lots?${expiredQuery}`),
+      ]);
+
+      const byId = new Map();
+      [...expired.lots, ...upcoming.lots].forEach((lot) => byId.set(lot.id, lot));
+      setLots(
+        [...byId.values()].sort((a, b) => (a.days_to_expiry ?? 9e9) - (b.days_to_expiry ?? 9e9))
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLotsLoading(false);
+    }
+  }
+
+  const lotSummary = useMemo(() => summarizeLots(lots), [lots]);
 
   function toggleCategory(id) {
     setSelectedCategories((prev) =>
@@ -259,8 +295,111 @@ export default function InventoryPage() {
       </SectionCard>
 
       <SectionCard
-        title="Ajustes recientes"
-        description="Últimos movimientos de stock con contexto del operador."
+        title="Control de vencimientos"
+        description="Lotes con saldo ordenados por urgencia. El stock se descuenta primero del lote que vence antes (FEFO)."
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {EXPIRY_HORIZONS.map((option) => (
+              <button
+                key={option.days}
+                type="button"
+                onClick={() => setHorizon(option.days)}
+                className={`btn-ghost h-9 px-3 text-sm ${
+                  horizon === option.days ? "border-brand bg-brand/5 text-brand" : ""
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        {lotsLoading ? (
+          <p className="text-sm text-muted">Cargando lotes...</p>
+        ) : lots.length ? (
+          <>
+            <div className="mb-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-700">Vencidos</p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-rose-800">
+                  {lotSummary.expiredUnits}
+                  <span className="ml-2 text-sm font-medium text-rose-600">
+                    unid. en {lotSummary.expired} {lotSummary.expired === 1 ? "lote" : "lotes"}
+                  </span>
+                </p>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-800">Vencen en 7 días</p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-amber-900">
+                  {lotSummary.criticalUnits}
+                  <span className="ml-2 text-sm font-medium text-amber-700">
+                    unid. en {lotSummary.critical} {lotSummary.critical === 1 ? "lote" : "lotes"}
+                  </span>
+                </p>
+              </div>
+              <div className="rounded-2xl border border-line bg-cloud/70 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+                  En la ventana de {horizon} días
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-ink">
+                  {lotSummary.units}
+                  <span className="ml-2 text-sm font-medium text-muted">
+                    unid. en {lots.length} {lots.length === 1 ? "lote" : "lotes"}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="text-xs uppercase tracking-[0.22em] text-muted">
+                  <tr>
+                    <th className="pb-4">Producto</th>
+                    <th className="pb-4">Lote</th>
+                    {stores.length > 1 && <th className="pb-4">Tienda</th>}
+                    <th className="pb-4">Vence</th>
+                    <th className="pb-4">Estado</th>
+                    <th className="pb-4 text-right">Saldo</th>
+                    <th className="pb-4 text-right">Costo unit.</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {lots.map((lot) => {
+                    const status = expiryStatus(lot);
+                    return (
+                      <tr key={lot.id} className={status.rowClass}>
+                        <td className="py-4">
+                          <p className="font-medium text-ink">{lot.product_name}</p>
+                          <p className="text-sm text-muted">{lot.sku}</p>
+                        </td>
+                        <td className="py-4 text-muted">{lot.lot_code || "—"}</td>
+                        {stores.length > 1 && <td className="py-4 text-muted">{lot.store_name}</td>}
+                        <td className="py-4 text-muted">{formatDate(lot.expiry_date)}</td>
+                        <td className="py-4">
+                          <span className={`chip ${status.chipClass}`}>{status.label}</span>
+                        </td>
+                        <td className="py-4 text-right text-lg font-semibold text-ink">
+                          {lot.quantity_remaining}
+                        </td>
+                        <td className="py-4 text-right text-muted">{formatCurrency(lot.unit_cost)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <EmptyState
+            description={`Ningún lote con saldo vence en los próximos ${horizon} días. Los vencimientos se capturan al recibir una compra.`}
+            title="Sin vencimientos próximos"
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Movimientos recientes"
+        description="Últimos movimientos de stock con su lote de origen y el operador responsable."
       >
         {adjustments.length ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -277,6 +416,12 @@ export default function InventoryPage() {
                     {adj.quantity_change > 0 ? "+" : ""}{adj.quantity_change}
                   </span>
                 </div>
+                {(adj.lot_code || adj.expiry_date) && (
+                  <p className="mt-2 text-xs text-muted">
+                    Lote {adj.lot_code || "sin código"}
+                    {adj.expiry_date ? ` · vence ${formatDate(adj.expiry_date)}` : ""}
+                  </p>
+                )}
                 {adj.note && <p className="mt-3 text-sm text-muted">{adj.note}</p>}
                 <p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted">
                   {adj.actor_name} · {formatDate(adj.created_at)}
@@ -331,11 +476,15 @@ export default function InventoryPage() {
             <label className="mb-2 block text-sm font-medium text-ink">Motivo</label>
             <select className="input-field" value={form.reason} onChange={(e) => patch("reason", e.target.value)}>
               <option value="audit">Auditoría</option>
-              <option value="purchase">Compra</option>
-              <option value="sale">Venta</option>
-              <option value="display">Exhibición</option>
+              <option value="restock">Reposición</option>
               <option value="damage">Merma</option>
+              <option value="expiry">Vencimiento</option>
+              <option value="display">Exhibición</option>
             </select>
+            <p className="mt-2 text-xs text-muted">
+              Un ajuste negativo descuenta del lote que vence antes; uno positivo crea un lote nuevo sin
+              vencimiento.
+            </p>
           </div>
 
           <div>

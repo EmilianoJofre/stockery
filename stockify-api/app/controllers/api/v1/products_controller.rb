@@ -88,7 +88,10 @@ module Api
       end
 
       def product_params
-        params.require(:product).permit(:name, :sku, :description, :price, :low_stock_threshold, :active, :product_category_id)
+        params.require(:product).permit(
+          :name, :sku, :description, :price, :low_stock_threshold, :active,
+          :product_category_id, :tax_exempt
+        )
       end
     end
   end
